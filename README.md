@@ -127,7 +127,22 @@ This service is the **CRM bounded context** toward Phase 2 of the ERP plan:
 - Sync: HTTP/REST + JPA → Neon Postgres  
 - Async: publish domain events to RabbitMQ  
 - Auth: JWT issued here (extract to a dedicated Auth Service later)  
-- Still pending for full diagram match: API Gateway, Feign/WebClient to HRM/MMS/FMS, Flyway migrations, external notification service
+- Schema: **Flyway** migrations under `src/main/resources/db/migration`  
+- Observability: Spring Boot **Actuator** (`/actuator/health`, `/info`, `/prometheus`)  
+- Still pending for full diagram match: API Gateway, Feign/WebClient to HRM/MMS/FMS, external notification service
+
+## Flyway & Actuator verification
+
+```bash
+# Start the app, then:
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/actuator/info
+curl http://localhost:8080/actuator/prometheus
+
+# Confirm Flyway history in Neon / psql:
+# SELECT * FROM flyway_schema_history ORDER BY installed_rank;
+# SELECT * FROM system_metadata;
+```
 
 ## Useful commands
 
