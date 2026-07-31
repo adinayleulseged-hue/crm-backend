@@ -4,6 +4,7 @@ package com.crm.crm_backend.service.core;
 import com.crm.crm_backend.dto.request.PaymentCreateDTO;
 import com.crm.crm_backend.dto.request.PaymentUpdateDTO;
 import com.crm.crm_backend.dto.response.PaymentResponseDTO;
+import com.crm.crm_backend.event.publisher.PaymentEventPublisher;
 import com.crm.crm_backend.mapper.PaymentMapper;
 import com.crm.crm_backend.model.entity.Customer;
 import com.crm.crm_backend.model.entity.Invoice;
@@ -32,6 +33,7 @@ public class PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final CustomerRepository customerRepository;
     private final PaymentMapper paymentMapper;
+    private final PaymentEventPublisher paymentEventPublisher;
 
     public PaymentResponseDTO createPayment(PaymentCreateDTO dto) {
 
@@ -65,6 +67,7 @@ public class PaymentService {
         }
 
         invoiceRepository.save(invoice);
+        paymentEventPublisher.publishPaymentReceived(saved);
 
         return paymentMapper.toResponseDTO(saved);
     }

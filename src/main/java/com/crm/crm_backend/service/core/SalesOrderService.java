@@ -5,6 +5,7 @@ import com.crm.crm_backend.dto.request.OrderItemRequestDTO;
 import com.crm.crm_backend.dto.request.SalesOrderCreateDTO;
 import com.crm.crm_backend.dto.request.SalesOrderUpdateDTO;
 import com.crm.crm_backend.dto.response.SalesOrderResponseDTO;
+import com.crm.crm_backend.event.publisher.OrderEventPublisher;
 import com.crm.crm_backend.exception.OpportunityNotFoundException;
 import com.crm.crm_backend.mapper.SalesOrderMapper;
 import com.crm.crm_backend.model.entity.Customer;
@@ -34,6 +35,7 @@ public class SalesOrderService {
     private final CustomerRepository customerRepository;
     private final OpportunityRepository opportunityRepository;
     private final SalesOrderMapper salesOrderMapper;
+    private final OrderEventPublisher orderEventPublisher;
 
     public SalesOrderResponseDTO createSalesOrder(SalesOrderCreateDTO dto) {
 
@@ -119,6 +121,22 @@ public class SalesOrderService {
         SalesOrder updated = salesOrderRepository.save(order);
 
         return salesOrderMapper.toResponseDTO(updated);
+    }
+
+    public SalesOrderResponseDTO confirmSalesOrder(Long id) {
+        SalesOrder order = salesOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sales Order not found"));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot confirm a cancelled sales order");
+        }
+
+        order.setStatus(OrderStatus.APPROVED);
+        SalesOrder confirmed = salesOrderRepository.save(order);
+        orderEventPublisher.publishSalesOrderConfirmed(confirmed);
+        log.info("Sales order {} confirmed", confirmed.getOrderNumber());
+
+        return salesOrderMapper.toResponseDTO(confirmed);
     }
 
     public void deleteSalesOrder(Long id) {

@@ -4,6 +4,7 @@ package com.crm.crm_backend.service.core;
 import com.crm.crm_backend.dto.request.InvoiceCreateDTO;
 import com.crm.crm_backend.dto.request.InvoiceUpdateDTO;
 import com.crm.crm_backend.dto.response.InvoiceResponseDTO;
+import com.crm.crm_backend.event.publisher.InvoiceEventPublisher;
 import com.crm.crm_backend.mapper.InvoiceMapper;
 import com.crm.crm_backend.model.entity.Customer;
 import com.crm.crm_backend.model.entity.Invoice;
@@ -31,6 +32,7 @@ public class InvoiceService {
     private final SalesOrderRepository salesOrderRepository;
     private final CustomerRepository customerRepository;
     private final InvoiceMapper invoiceMapper;
+    private final InvoiceEventPublisher invoiceEventPublisher;
 
     public InvoiceResponseDTO createInvoice(InvoiceCreateDTO dto) {
 
@@ -65,6 +67,7 @@ public class InvoiceService {
         invoice.setBalanceAmount(total);
 
         Invoice saved = invoiceRepository.save(invoice);
+        invoiceEventPublisher.publishInvoiceCreated(saved);
 
         return invoiceMapper.toResponseDTO(saved);
     }

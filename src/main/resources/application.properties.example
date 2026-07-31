@@ -1,4 +1,4 @@
-spring.application.name=crm-backend
+ spring.application.name=crm-backend
 
 # Copy this file to application.properties and fill in real values.
 # application.properties is gitignored — do not commit secrets.
@@ -17,5 +17,13 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 logging.level.org.springframework.web=DEBUG
-spring.security.user.name=admin
-spring.security.user.password=admin123
+
+# JWT (Base64-encoded secret, at least 256 bits after decode)
+crm.security.jwt.secret=${JWT_SECRET:Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==}
+crm.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
+
+# RabbitMQ (docker compose up -d rabbitmq)
+spring.rabbitmq.host=${RABBITMQ_HOST:localhost}
+spring.rabbitmq.port=${RABBITMQ_PORT:5672}
+spring.rabbitmq.username=${RABBITMQ_USER:crm}
+spring.rabbitmq.password=${RABBITMQ_PASSWORD:crm123}

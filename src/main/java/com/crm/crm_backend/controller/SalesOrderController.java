@@ -54,6 +54,13 @@ public class SalesOrderController {
                 salesOrderService.updateSalesOrder(id, dto));
     }
 
+    @PatchMapping("/{id}/confirm")
+    public ResponseEntity<SalesOrderResponseDTO> confirmSalesOrder(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(salesOrderService.confirmSalesOrder(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSalesOrder(
             @PathVariable Long id) {
