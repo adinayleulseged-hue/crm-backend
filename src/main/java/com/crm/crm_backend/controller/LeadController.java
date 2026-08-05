@@ -4,12 +4,14 @@ import com.crm.crm_backend.dto.request.LeadConvertDTO;
 import com.crm.crm_backend.dto.request.LeadCreateDTO;
 import com.crm.crm_backend.dto.request.LeadUpdateDTO;
 import com.crm.crm_backend.dto.response.LeadResponseDTO;
-import com.crm.crm_backend.service.core.LeadService;import jakarta.validation.Valid;
+import com.crm.crm_backend.service.core.LeadService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,10 +22,8 @@ public class LeadController {
 
     private final LeadService leadService;
 
-    /**
-     * Create Lead
-     */
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<LeadResponseDTO> createLead(
             @Valid @RequestBody LeadCreateDTO dto) {
 
@@ -31,30 +31,24 @@ public class LeadController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    /**
-     * Get Lead by ID
-     */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<LeadResponseDTO> getLeadById(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(leadService.getLeadById(id));
     }
 
-    /**
-     * Get All Leads (Pagination)
-     */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<Page<LeadResponseDTO>> getAllLeads(
             Pageable pageable) {
 
         return ResponseEntity.ok(leadService.getAllLeads(pageable));
     }
 
-    /**
-     * Update Lead
-     */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<LeadResponseDTO> updateLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadUpdateDTO dto) {
@@ -62,10 +56,8 @@ public class LeadController {
         return ResponseEntity.ok(leadService.updateLead(id, dto));
     }
 
-    /**
-     * Delete Lead
-     */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteLead(
             @PathVariable Long id) {
 
@@ -73,14 +65,11 @@ public class LeadController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Convert Lead
-     */
     @PatchMapping("/{id}/convert")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<LeadResponseDTO> convertLead(
             @PathVariable Long id,
-            @Valid @RequestBody LeadConvertDTO dto)
-{
+            @Valid @RequestBody LeadConvertDTO dto) {
 
         return ResponseEntity.ok(leadService.convertLeadToCustomer(id, dto));
     }

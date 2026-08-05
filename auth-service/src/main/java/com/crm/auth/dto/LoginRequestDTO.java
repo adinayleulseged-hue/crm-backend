@@ -1,4 +1,4 @@
-package com.crm.crm_backend.dto.request;
+package com.crm.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

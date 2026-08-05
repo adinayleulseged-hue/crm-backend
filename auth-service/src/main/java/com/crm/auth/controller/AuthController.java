@@ -1,15 +1,18 @@
-package com.crm.crm_backend.controller;
+package com.crm.auth.controller;
 
-import com.crm.crm_backend.common.ApiResponse;
-import com.crm.crm_backend.dto.request.LoginRequestDTO;
-import com.crm.crm_backend.dto.request.RegisterRequestDTO;
-import com.crm.crm_backend.dto.response.AuthResponseDTO;
-import com.crm.crm_backend.service.core.AuthService;
+import com.crm.auth.dto.ApiResponse;
+import com.crm.auth.dto.AuthResponseDTO;
+import com.crm.auth.dto.LoginRequestDTO;
+import com.crm.auth.dto.RegisterRequestDTO;
+import com.crm.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")

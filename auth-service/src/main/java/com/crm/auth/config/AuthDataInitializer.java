@@ -1,8 +1,8 @@
-package com.crm.crm_backend.config;
+package com.crm.auth.config;
 
-import com.crm.crm_backend.model.entity.User;
-import com.crm.crm_backend.model.enums.UserRole;
-import com.crm.crm_backend.repository.UserRepository;
+import com.crm.auth.model.AuthUser;
+import com.crm.auth.model.UserRole;
+import com.crm.auth.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class AuthDataInitializer implements ApplicationRunner {
 
-    private final UserRepository userRepository;
+    private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -27,11 +27,11 @@ public class AuthDataInitializer implements ApplicationRunner {
     }
 
     private void seedUser(String username, String email, String rawPassword, UserRole role) {
-        if (userRepository.existsByUsername(username)) {
+        if (authUserRepository.existsByUsername(username)) {
             return;
         }
 
-        userRepository.save(User.builder()
+        authUserRepository.save(AuthUser.builder()
                 .username(username)
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
@@ -39,6 +39,6 @@ public class AuthDataInitializer implements ApplicationRunner {
                 .enabled(true)
                 .build());
 
-        log.info("Seeded CRM user '{}' with role {}", username, role);
+        log.info("Seeded auth user '{}' with role {}", username, role);
     }
 }

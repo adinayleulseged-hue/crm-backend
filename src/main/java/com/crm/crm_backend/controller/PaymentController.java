@@ -1,6 +1,5 @@
 package com.crm.crm_backend.controller;
 
-
 import com.crm.crm_backend.dto.request.PaymentCreateDTO;
 import com.crm.crm_backend.dto.request.PaymentUpdateDTO;
 import com.crm.crm_backend.dto.response.PaymentResponseDTO;
@@ -11,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,6 +22,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
     public ResponseEntity<PaymentResponseDTO> createPayment(
             @Valid @RequestBody PaymentCreateDTO dto) {
 
@@ -30,6 +31,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
     public ResponseEntity<PaymentResponseDTO> getPayment(
             @PathVariable Long id) {
 
@@ -37,6 +39,7 @@ public class PaymentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
     public ResponseEntity<Page<PaymentResponseDTO>> getAllPayments(
             Pageable pageable) {
 
@@ -44,6 +47,7 @@ public class PaymentController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
     public ResponseEntity<PaymentResponseDTO> updatePayment(
             @PathVariable Long id,
             @Valid @RequestBody PaymentUpdateDTO dto) {
@@ -52,6 +56,7 @@ public class PaymentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePayment(
             @PathVariable Long id) {
 

@@ -1,6 +1,6 @@
-package com.crm.crm_backend.dto.request;
+package com.crm.auth.dto;
 
-import com.crm.crm_backend.model.enums.UserRole;
+import com.crm.auth.model.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

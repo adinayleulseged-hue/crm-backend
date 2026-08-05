@@ -1,6 +1,5 @@
 package com.crm.crm_backend.controller;
 
-
 import com.crm.crm_backend.dto.request.InvoiceCreateDTO;
 import com.crm.crm_backend.dto.request.InvoiceUpdateDTO;
 import com.crm.crm_backend.dto.response.InvoiceResponseDTO;
@@ -11,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,6 +22,7 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
     public ResponseEntity<InvoiceResponseDTO> createInvoice(
             @Valid @RequestBody InvoiceCreateDTO dto) {
 
@@ -30,6 +31,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<InvoiceResponseDTO> getInvoice(
             @PathVariable Long id) {
 
@@ -37,6 +39,7 @@ public class InvoiceController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
     public ResponseEntity<Page<InvoiceResponseDTO>> getAllInvoices(
             Pageable pageable) {
 
@@ -44,6 +47,7 @@ public class InvoiceController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
     public ResponseEntity<InvoiceResponseDTO> updateInvoice(
             @PathVariable Long id,
             @Valid @RequestBody InvoiceUpdateDTO dto) {
@@ -53,6 +57,7 @@ public class InvoiceController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteInvoice(
             @PathVariable Long id) {
 

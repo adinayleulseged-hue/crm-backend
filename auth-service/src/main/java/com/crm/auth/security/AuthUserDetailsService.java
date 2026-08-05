@@ -1,9 +1,10 @@
-package com.crm.crm_backend.security.UserDetailsServiceImpl;
+package com.crm.auth.security;
 
-import com.crm.crm_backend.model.entity.User;
-import com.crm.crm_backend.repository.UserRepository;
+import com.crm.auth.model.AuthUser;
+import com.crm.auth.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,16 +14,16 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+public class AuthUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final AuthUserRepository authUserRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
+        AuthUser user = authUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        return org.springframework.security.core.userdetails.User.builder()
+        return User.builder()
                 .username(user.getUsername())
                 .password(user.getPassword())
                 .disabled(!user.isEnabled())

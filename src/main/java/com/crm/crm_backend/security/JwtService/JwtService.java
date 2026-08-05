@@ -1,20 +1,20 @@
 package com.crm.crm_backend.security.JwtService;
 
-import com.crm.crm_backend.model.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * JWT resource-server validation only. Tokens are issued by auth-service
+ * using the shared {@code crm.security.jwt.secret}.
+ */
 @Service
 public class JwtService {
 
@@ -24,14 +24,6 @@ public class JwtService {
     @Value("${crm.security.jwt.expiration-ms}")
     private long expirationMs;
 
-    public String generateToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
-        claims.put("userId", user.getId());
-        claims.put("email", user.getEmail());
-        return buildToken(claims, user.getUsername());
-    }
-
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -40,26 +32,20 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     public long getExpirationMs() {
         return expirationMs;
-    }
-
-    private String buildToken(Map<String, Object> claims, String subject) {
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + expirationMs);
-
-        return Jwts.builder()
-                .claims(claims)
-                .subject(subject)
-                .issuedAt(now)
-                .expiration(expiry)
-                .signWith(getSigningKey())
-                .compact();
     }
 
     private boolean isTokenExpired(String token) {

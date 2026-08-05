@@ -1,6 +1,5 @@
 package com.crm.crm_backend.controller;
 
-
 import com.crm.crm_backend.dto.request.QuotationCreateDTO;
 import com.crm.crm_backend.dto.request.QuotationUpdateDTO;
 import com.crm.crm_backend.dto.response.QuotationResponseDTO;
@@ -11,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,6 +22,7 @@ public class QuotationController {
     private final QuotationService quotationService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<QuotationResponseDTO> createQuotation(
             @Valid @RequestBody QuotationCreateDTO dto) {
 
@@ -32,6 +33,7 @@ public class QuotationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<QuotationResponseDTO> getQuotation(
             @PathVariable Long id) {
 
@@ -41,6 +43,7 @@ public class QuotationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<Page<QuotationResponseDTO>> getAllQuotations(
             Pageable pageable) {
 
@@ -50,6 +53,7 @@ public class QuotationController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<QuotationResponseDTO> updateQuotation(
             @PathVariable Long id,
             @Valid @RequestBody QuotationUpdateDTO dto) {
@@ -60,6 +64,7 @@ public class QuotationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteQuotation(
             @PathVariable Long id) {
 

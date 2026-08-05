@@ -2,7 +2,7 @@
 
 **Service:** `crm-backend`  
 **Bounded context:** Customer Relationship Management (CRM)  
-**Phase posture:** Extracted microservice foundation (ERP Phase 2 shape), with Auth temporarily co-located  
+**Phase posture:** Extracted microservice foundation (ERP Phase 2) with Auth Service + API Gateway in-repo  
 **Audience use:** Live talk track for Technical Leads / Instructor — read aloud, jump to paths when challenged  
 
 ---
@@ -12,65 +12,43 @@
 ### 1.1 Current runtime architecture
 
 ```
-                         ┌─────────────────────────────┐
-                         │  Client (React / Postman)   │
-                         └──────────────┬──────────────┘
-                                        │ HTTPS / HTTP
-                                        │ Authorization: Bearer <JWT>
-                    ┌───────────────────▼───────────────────┐
-                    │         CRM Microservice              │
-                    │         Spring Boot 3.5.16            │
-                    │                                       │
-                    │  /api/auth/**  (public)               │
-                    │   └─ AuthController → AuthService     │
-                    │       └─ JwtService (issue HS256 JWT) │
-                    │                                       │
-                    │  /api/**       (protected)            │
-                    │   └─ JwtAuthenticationFilter          │
-                    │       └─ Controllers → Services       │
-                    │           └─ Repositories (JPA)       │
-                    │                                       │
-                    │  /actuator/health|info|prometheus     │
-                    │   (public observability)              │
-                    │                                       │
-                    │  Publishers ──► RabbitTemplate        │
-                    │  Listeners  ◄── @RabbitListener       │
-                    └───────┬───────────────────┬───────────┘
-                            │                   │
-                   sync JDBC│                   │ AMQP (async)
-                            │                   │
-              ┌─────────────▼──────┐   ┌────────▼────────────┐
-              │ Neon PostgreSQL    │   │ RabbitMQ            │
-              │ Shared team DB     │   │ Exchange: erp.events│
-              │ Flyway V1 baseline │   │ Queues: notify /    │
-              │ flyway_schema_hist │   │ finance / inventory │
-              └────────────────────┘   └─────────────────────┘
+Client (React / Postman)
+        │ HTTP  :8080
+        ▼
+┌───────────────────┐
+│   API Gateway     │  api-gateway/
+└─────────┬─────────┘
+          ├─ /api/auth/** ──► Auth Service :8081  (issues JWT, auth_users)
+          └─ /api/**      ──► CRM :8082           (validates JWT claims)
+                                   │
+                    ┌──────────────┼──────────────┐
+                    │ JDBC         │ AMQP         │ WebClient
+                    ▼              ▼              ▼
+              Neon Postgres   RabbitMQ      HRM / MMS / FMS
+              Flyway V1+V2    erp.events    (fallbacks if down)
 ```
 
-**Communication legend (matches ERP diagram intent):**
-- **Solid / sync:** Client → CRM REST → Neon Postgres  
-- **Dashed / async:** CRM domain actions → RabbitMQ → in-process consumers (notification / finance / inventory hooks)
+**Communication legend:**
+- **Solid / sync:** Client → Gateway → Auth|CRM → Neon  
+- **Dashed / async:** CRM → RabbitMQ → notification (email/SMS) / finance (FMS) / inventory (MMS)
 
 ### 1.2 What is actually built vs stub / placeholder
 
 | Area | State | What you can defend |
 |------|--------|---------------------|
-| Domain CRUD APIs | **Built** | Customers, Leads, Opportunities, Quotations, Sales Orders, Invoices, Payments, Interactions, Campaigns, Segments, Audit Trails, Dashboard/Analytics/Reports endpoints |
-| JWT Auth (login/register/filter) | **Built** | Stateless JWT, seeded roles, method security enabled; Auth is **inside CRM** (not yet a separate Auth Service) |
-| RabbitMQ events | **Built** | `sales.order.confirmed`, `invoice.created`, `payment.received`, lead lifecycle events published to `erp.events` |
-| Event consumers | **Built (thin)** | Listeners log/consume; not a full Notification product yet |
-| Flyway migrations | **Built** | `V1__baseline_init.sql` owns baseline DDL; Hibernate `ddl-auto=none` |
-| Actuator observability | **Built** | Health, info, Prometheus scrape endpoint exposed |
-| Shared Neon DB | **Built** | Team uses one online Postgres; secrets via local `application.properties` (gitignored) |
-| API Gateway | **Not built** | Clients call CRM directly |
-| Separate Auth Service | **Not built** | Package `AuthClient` exists as empty stub for future extraction |
-| HRM / MMS / FMS Feign/WebClient | **Stub** | Empty client/service classes under `integration/` |
-| Email / SMS | **Stub** | Empty notification packages |
-| Cache / schedulers / workflows | **Mostly stub** | Folder structure present; not production-wired |
-| Entity stubs | **Placeholder** | e.g. Territory, PricingRule, SalesForecast — empty classes |
+| Domain CRUD APIs | **Built** | Full CRM domain controllers with `@PreAuthorize` |
+| Auth Service | **Built** | Separate `auth-service/` — login/register, seeds users, owns `auth_users` |
+| CRM JWT resource server | **Built** | Validates shared-secret JWT from claims (no local User table) |
+| API Gateway | **Built** | `api-gateway/` routes Auth + CRM |
+| RabbitMQ events | **Built** | Order/invoice/payment/lead publishers + consumers |
+| Notifications | **Built** | Email/SMS services (log transport if SMTP unset) |
+| WebClient integrations | **Built** | Auth/HRM/MMS/FMS clients + fallbacks |
+| Flyway | **Built** | V1 baseline + V2 drop `crm_users` |
+| Actuator | **Built** | Health, info, Prometheus |
+| Cache / schedulers / entity stubs | **Mostly stub** | Territory, PricingRule, etc. remain placeholders |
 
 **One-sentence honesty line for leads:**  
-*“We have a working CRM bounded context with JWT, Flyway, Actuator, and RabbitMQ events; gateway, dedicated Auth Service, and cross-module HTTP integrations are the deliberate next extraction steps.”*
+*“CRM is a JWT resource server behind an API Gateway; Auth Service owns users; RabbitMQ plus WebClient wire notifications and MMS/FMS/HRM integrations.”*
 
 ---
 
@@ -99,7 +77,8 @@ Exact versions from `pom.xml` / Spring Boot BOM (`3.5.16`).
 | Test | `spring-boot-starter-test` | Boot-managed |
 | Local broker | RabbitMQ Docker image | `rabbitmq:3.13-management` (`docker-compose.yml`) |
 
-**Not in classpath today (important if challenged):** Spring Cloud Gateway, OpenFeign, Spring Cloud Config, OAuth2 Resource Server starter, Kafka, Redis.
+**Also in this repo:** Spring Cloud Gateway (`api-gateway/`), WebClient (`spring-boot-starter-webflux`), Mail starter.  
+**Not used:** OpenFeign, Spring Cloud Config, OAuth2 Resource Server starter, Kafka, Redis.
 
 ---
 
@@ -114,10 +93,10 @@ Jump paths for live questions. Root package: `com.crm.crm_backend`.
 | Main application | `src/main/java/com/crm/crm_backend/CrmBackendApplication.java` |
 | Runtime config (local, gitignored) | `src/main/resources/application.properties` |
 | Team template (committed) | `src/main/resources/application.properties.example` |
-| Flyway migrations | `src/main/resources/db/migration/` |
-| Baseline SQL | `src/main/resources/db/migration/V1__baseline_init.sql` |
+| Flyway migrations | `src/main/resources/db/migration/` (V1 baseline, V2 drop crm_users) |
 | RabbitMQ topology | `src/main/java/com/crm/crm_backend/config/CrmRabbitMQConfig.java` |
-| Auth user seeding | `src/main/java/com/crm/crm_backend/config/AuthDataInitializer.java` |
+| Auth Service | `auth-service/` (port 8081) |
+| API Gateway | `api-gateway/` (port 8080) |
 | Docker RabbitMQ | `docker-compose.yml` |
 | Project README | `README.md` |
 
@@ -125,14 +104,13 @@ Jump paths for live questions. Root package: `com.crm.crm_backend`.
 
 | Concern | Path |
 |---------|------|
-| Security filter chain | `src/main/java/com/crm/crm_backend/security/SecurityConfig/SecurityConfig.java` |
-| JWT issue/validate | `src/main/java/com/crm/crm_backend/security/JwtService/JwtService.java` |
-| Bearer filter | `src/main/java/com/crm/crm_backend/security/JwtFilter/JwtAuthenticationFilter.java` |
-| UserDetails loading | `src/main/java/com/crm/crm_backend/security/UserDetailsServiceImpl/CustomUserDetailsService.java` |
-| Login/Register API | `src/main/java/com/crm/crm_backend/controller/AuthController.java` |
-| Auth business logic | `src/main/java/com/crm/crm_backend/service/core/AuthService.java` |
-| User entity / roles | `model/entity/User.java`, `model/enums/UserRole.java` |
-| Future external Auth stub | `integration/client/AuthClient.java` (**empty**) |
+| Auth login/register | `auth-service/.../controller/AuthController.java` |
+| Auth user seeding | `auth-service/.../config/AuthDataInitializer.java` |
+| Auth JWT issue | `auth-service/.../security/JwtTokenService.java` |
+| CRM security filter chain | `security/SecurityConfig/SecurityConfig.java` |
+| CRM JWT validate only | `security/JwtService/JwtService.java` |
+| CRM Bearer filter (claims → roles) | `security/JwtFilter/JwtAuthenticationFilter.java` |
+| Auth health client | `integration/client/AuthClient.java` |
 
 ### 3.3 Domain API surface (controllers)
 
@@ -153,7 +131,7 @@ Jump paths for live questions. Root package: `com.crm.crm_backend`.
 
 | Concern | Path |
 |---------|------|
-| Core services | `service/core/*Service.java` (Customer, Lead, SalesOrder, Invoice, Payment, Auth, …) |
+| Core services | `service/core/*Service.java` (Customer, Lead, SalesOrder, Invoice, Payment, …) |
 | Repositories | `repository/*Repository.java` |
 | Entities | `model/entity/*.java` |
 | Enums | `model/enums/*.java` |
@@ -164,17 +142,18 @@ Jump paths for live questions. Root package: `com.crm.crm_backend`.
 | Audit aspect | `aspect/AuditLogAspect.java` |
 | Exception API | `exception/CustomExceptionHandler.java` |
 
-### 3.5 Integration stubs (say “scaffolding” if opened)
+### 3.5 Integrations & notifications (implemented)
 
-| Stub area | Path |
-|-----------|------|
-| HRM/MMS/FMS clients | `integration/client/{Hrm,Mms,Fms}Client.java` |
-| Integration services | `service/integration/*` |
+| Area | Path |
+|------|------|
+| WebClient config | `config/CrmWebClientConfig.java` |
+| HRM/MMS/FMS/Auth clients | `integration/client/*Client.java` |
 | Fallbacks | `integration/fallback/*` |
-| Email/SMS | `notification/**` |
-| Cache / async / scheduler configs | `config/CrmCacheConfig.java`, `CrmAsyncConfig.java`, `CrmSchedulerConfig.java` |
+| Integration services | `service/integration/*` |
+| Email / SMS / Notification | `notification/**` |
+| Cache / async / scheduler (still thin) | `config/CrmCacheConfig.java`, `CrmAsyncConfig.java`, `CrmSchedulerConfig.java` |
 
-### 3.6 Demo credentials (seeded)
+### 3.6 Demo credentials (seeded by Auth Service)
 
 | User | Password | Role |
 |------|----------|------|

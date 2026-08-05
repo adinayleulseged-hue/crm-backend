@@ -1,6 +1,5 @@
 package com.crm.crm_backend.controller;
 
-
 import com.crm.crm_backend.dto.request.InteractionCreateDTO;
 import com.crm.crm_backend.dto.request.InteractionUpdateDTO;
 import com.crm.crm_backend.dto.response.InteractionResponseDTO;
@@ -11,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,6 +22,7 @@ public class InteractionController {
     private final InteractionService interactionService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<InteractionResponseDTO> createInteraction(
             @Valid @RequestBody InteractionCreateDTO dto) {
 
@@ -30,6 +31,7 @@ public class InteractionController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<InteractionResponseDTO> getInteraction(
             @PathVariable Long id) {
 
@@ -37,6 +39,7 @@ public class InteractionController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<Page<InteractionResponseDTO>> getAllInteractions(
             Pageable pageable) {
 
@@ -44,6 +47,7 @@ public class InteractionController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<InteractionResponseDTO> updateInteraction(
             @PathVariable Long id,
             @Valid @RequestBody InteractionUpdateDTO dto) {
@@ -53,6 +57,7 @@ public class InteractionController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteInteraction(
             @PathVariable Long id) {
 

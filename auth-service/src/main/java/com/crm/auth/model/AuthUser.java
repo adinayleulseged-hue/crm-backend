@@ -1,19 +1,18 @@
-package com.crm.crm_backend.model.entity;
+package com.crm.auth.model;
 
-import com.crm.crm_backend.model.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "crm_users")
+@Table(name = "auth_users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class AuthUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

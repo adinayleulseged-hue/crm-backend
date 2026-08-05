@@ -1,4 +1,5 @@
 spring.application.name=crm-backend
+server.port=${SERVER_PORT:8082}
 
 # Copy this file to application.properties and fill in real values.
 # application.properties is gitignored — do not commit secrets.
@@ -23,7 +24,7 @@ spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 logging.level.org.springframework.web=DEBUG
 logging.level.org.flywaydb=INFO
 
-# JWT (Base64-encoded secret, at least 256 bits after decode)
+# JWT validation only (must match auth-service auth.security.jwt.secret)
 crm.security.jwt.secret=${JWT_SECRET:Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==}
 crm.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
 
@@ -33,10 +34,35 @@ spring.rabbitmq.port=${RABBITMQ_PORT:5672}
 spring.rabbitmq.username=${RABBITMQ_USER:crm}
 spring.rabbitmq.password=${RABBITMQ_PASSWORD:crm123}
 
+# Cross-module HTTP integrations (WebClient)
+crm.integration.auth.base-url=${AUTH_SERVICE_URL:http://localhost:8081}
+crm.integration.auth.enabled=true
+crm.integration.hrm.base-url=${HRM_SERVICE_URL:http://localhost:8091}
+crm.integration.hrm.enabled=true
+crm.integration.mms.base-url=${MMS_SERVICE_URL:http://localhost:8092}
+crm.integration.mms.enabled=true
+crm.integration.fms.base-url=${FMS_SERVICE_URL:http://localhost:8093}
+crm.integration.fms.enabled=true
+crm.integration.connect-timeout-ms=3000
+crm.integration.read-timeout-ms=5000
+
+# Notifications (log transport if SMTP not configured)
+crm.notification.email.enabled=true
+crm.notification.email.from=crm-noreply@insa.local
+crm.notification.sms.enabled=true
+crm.notification.sms.provider=log
+crm.notification.default-email=ops@crm.local
+crm.notification.default-sms=+10000000000
+# Optional SMTP:
+# spring.mail.host=smtp.example.com
+# spring.mail.port=587
+# spring.mail.username=
+# spring.mail.password=
+
 # Actuator / Observability
 management.endpoints.web.exposure.include=health,info,prometheus
 management.endpoint.health.show-details=always
 management.info.env.enabled=true
 info.app.name=crm-backend
-info.app.description=INSA CRM microservice
+info.app.description=INSA CRM microservice (JWT resource server)
 info.app.version=0.0.1-SNAPSHOT

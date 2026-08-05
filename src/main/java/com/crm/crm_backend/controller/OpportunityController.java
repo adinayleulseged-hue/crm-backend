@@ -1,6 +1,5 @@
 package com.crm.crm_backend.controller;
 
-
 import com.crm.crm_backend.dto.request.OpportunityCreateDTO;
 import com.crm.crm_backend.dto.request.OpportunityUpdateDTO;
 import com.crm.crm_backend.dto.response.OpportunityResponseDTO;
@@ -12,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +23,7 @@ public class OpportunityController {
     private final OpportunityService opportunityService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<OpportunityResponseDTO> createOpportunity(
             @Valid @RequestBody OpportunityCreateDTO dto) {
 
@@ -31,6 +32,7 @@ public class OpportunityController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<OpportunityResponseDTO> getOpportunityById(
             @PathVariable Long id) {
 
@@ -39,6 +41,7 @@ public class OpportunityController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<Page<OpportunityResponseDTO>> getAllOpportunities(
             Pageable pageable) {
 
@@ -47,6 +50,7 @@ public class OpportunityController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<OpportunityResponseDTO> updateOpportunity(
             @PathVariable Long id,
             @Valid @RequestBody OpportunityUpdateDTO dto) {
@@ -56,6 +60,7 @@ public class OpportunityController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteOpportunity(
             @PathVariable Long id) {
 
@@ -65,6 +70,7 @@ public class OpportunityController {
     }
 
     @PatchMapping("/{id}/stage")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<OpportunityResponseDTO> updateStage(
             @PathVariable Long id,
             @RequestParam OpportunityStage stage) {

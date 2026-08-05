@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,6 +22,7 @@ public class CampaignController {
     private final CampaignService campaignService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<CampaignResponseDTO> createCampaign(
             @Valid @RequestBody CampaignCreateDTO dto) {
 
@@ -29,6 +31,7 @@ public class CampaignController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<CampaignResponseDTO> getCampaign(
             @PathVariable Long id) {
 
@@ -36,6 +39,7 @@ public class CampaignController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<Page<CampaignResponseDTO>> getAllCampaigns(
             Pageable pageable) {
 
@@ -43,6 +47,7 @@ public class CampaignController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<CampaignResponseDTO> updateCampaign(
             @PathVariable Long id,
             @Valid @RequestBody CampaignUpdateDTO dto) {
@@ -52,6 +57,7 @@ public class CampaignController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCampaign(
             @PathVariable Long id) {
 
@@ -60,4 +66,3 @@ public class CampaignController {
         return ResponseEntity.noContent().build();
     }
 }
-

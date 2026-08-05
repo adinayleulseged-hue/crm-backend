@@ -1,6 +1,6 @@
-package com.crm.crm_backend.dto.response;
+package com.crm.auth.dto;
 
-import com.crm.crm_backend.model.enums.UserRole;
+import com.crm.auth.model.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -38,6 +38,12 @@ build/
 !.env.example
 **/application-local.properties
 **/application-local.yml
-src/main/resources/application.properties
-!src/main/resources/application.properties.example
+**/application.properties
+!**/application.properties.example
+!api-gateway/src/main/resources/application.properties
+
+### Agent handoff (local only — do not commit)
+.agent-handoff.md
+.agent-context.md
+AGENT_HANDOFF.md
 
