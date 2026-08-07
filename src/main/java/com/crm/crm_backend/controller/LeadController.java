@@ -27,7 +27,7 @@ public class LeadController {
     private final LeadService leadService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> createLead(
             @Valid @RequestBody LeadCreateDTO dto) {
 
@@ -37,7 +37,7 @@ public class LeadController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> getLeadById(
             @PathVariable Long id) {
 
@@ -45,7 +45,7 @@ public class LeadController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<LeadResponseDTO>>> getAllLeads(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) LeadStatus status,
@@ -61,7 +61,7 @@ public class LeadController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> updateLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadUpdateDTO dto) {
@@ -70,7 +70,7 @@ public class LeadController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteLead(
             @PathVariable Long id) {
 
@@ -79,7 +79,7 @@ public class LeadController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> updateLeadStatus(
             @PathVariable Long id,
             @RequestParam com.crm.crm_backend.model.enums.LeadStatus status) {
@@ -90,7 +90,7 @@ public class LeadController {
     }
 
     @PatchMapping("/{id}/convert")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> convertLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadConvertDTO dto) {

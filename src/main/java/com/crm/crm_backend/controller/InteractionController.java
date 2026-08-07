@@ -22,7 +22,7 @@ public class InteractionController {
     private final InteractionService interactionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<InteractionResponseDTO>> createInteraction(
             @Valid @RequestBody InteractionCreateDTO dto) {
 
@@ -31,7 +31,7 @@ public class InteractionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<InteractionResponseDTO>> getInteraction(
             @PathVariable Long id) {
 
@@ -39,7 +39,7 @@ public class InteractionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<InteractionResponseDTO>>> getAllInteractions(
             Pageable pageable) {
 
@@ -47,7 +47,7 @@ public class InteractionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<InteractionResponseDTO>> updateInteraction(
             @PathVariable Long id,
             @Valid @RequestBody InteractionUpdateDTO dto) {
@@ -56,7 +56,7 @@ public class InteractionController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteInteraction(
             @PathVariable Long id) {
 

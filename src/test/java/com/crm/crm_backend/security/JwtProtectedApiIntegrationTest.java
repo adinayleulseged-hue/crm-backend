@@ -2,37 +2,30 @@ package com.crm.crm_backend.security;
 
 import com.crm.crm_backend.controller.LeadController;
 import com.crm.crm_backend.dto.response.LeadResponseDTO;
-import com.crm.crm_backend.security.JwtFilter.JwtAuthenticationFilter;
-import com.crm.crm_backend.security.JwtService.JwtService;
 import com.crm.crm_backend.security.SecurityConfig.SecurityConfig;
 import com.crm.crm_backend.service.core.LeadService;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import javax.crypto.SecretKey;
-import java.util.Date;
-
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = LeadController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
+@Import(SecurityConfig.class)
 @TestPropertySource(properties = {
-        "crm.security.jwt.secret=Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==",
-        "crm.security.jwt.expiration-ms=86400000",
-        "crm.security.jwt.blacklist-enabled=false"
+        "crm.security.auth-mode=keycloak",
+        "crm.cors.allowed-origins=http://localhost:3000"
 })
 class JwtProtectedApiIntegrationTest {
 
@@ -42,13 +35,14 @@ class JwtProtectedApiIntegrationTest {
     @MockitoBean
     private LeadService leadService;
 
-    @Value("${crm.security.jwt.secret}")
-    private String jwtSecret;
+    /** Prevents auto-config from contacting a real Keycloak issuer during the test. */
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @Test
     void protectedEndpointRejectsMissingToken() throws Exception {
         mockMvc.perform(get("/api/leads/1"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -59,27 +53,17 @@ class JwtProtectedApiIntegrationTest {
         dto.setLastName("Lovelace");
         when(leadService.getLeadById(eq(1L))).thenReturn(dto);
 
-        String token = issueToken("admin", "ADMIN");
-
         mockMvc.perform(get("/api/leads/1")
-                        .header("Authorization", "Bearer " + token))
+                        .with(jwt()
+                                .jwt(j -> j
+                                        .claim("preferred_username", "erp-admin")
+                                        .claim("realm_access", java.util.Map.of(
+                                                "roles", java.util.List.of("admin", "crm_user"))))
+                                .authorities(new SimpleGrantedAuthority("admin"),
+                                        new SimpleGrantedAuthority("crm_user"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.firstName").value("Ada"));
-    }
-
-    private String issueToken(String username, String role) {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
-        long now = System.currentTimeMillis();
-        return Jwts.builder()
-                .subject(username)
-                .claim("role", role)
-                .claim("userId", 1L)
-                .issuedAt(new Date(now))
-                .expiration(new Date(now + 3_600_000))
-                .signWith(key)
-                .compact();
     }
 }

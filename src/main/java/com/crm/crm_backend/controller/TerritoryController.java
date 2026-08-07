@@ -23,7 +23,7 @@ public class TerritoryController {
     private final TerritoryService territoryService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<TerritoryResponseDTO>> createTerritory(
             @Valid @RequestBody TerritoryRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -31,25 +31,25 @@ public class TerritoryController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<List<TerritoryResponseDTO>>> getActiveTerritories() {
         return ResponseEntity.ok(ApiResponse.success(territoryService.getActiveTerritories()));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<TerritoryResponseDTO>> getTerritory(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(territoryService.getTerritory(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<TerritoryResponseDTO>>> getAllTerritories(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(territoryService.getAllTerritories(pageable)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<TerritoryResponseDTO>> updateTerritory(
             @PathVariable Long id,
             @Valid @RequestBody TerritoryRequestDTO dto) {
@@ -59,7 +59,7 @@ public class TerritoryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteTerritory(@PathVariable Long id) {
         territoryService.deleteTerritory(id);
         return ResponseEntity.ok(ApiResponse.success("Territory deleted", null));

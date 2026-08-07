@@ -31,7 +31,7 @@ public class CustomerController  {
 
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<CustomerResponseDTO>> createCustomer(
             @Valid @RequestBody CustomerCreateDTO dto) {
         CustomerResponseDTO customer = customerService.createCustomer(dto);
@@ -40,14 +40,14 @@ public class CustomerController  {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<CustomerResponseDTO>> getCustomer(@PathVariable Long id) {
         CustomerResponseDTO customer = customerService.getCustomerById(id);
         return ResponseEntity.ok(ApiResponse.success(customer));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<CustomerResponseDTO>> updateCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CustomerUpdateDTO dto) {
@@ -56,7 +56,7 @@ public class CustomerController  {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<CustomerResponseDTO>>> getAllCustomers(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) CustomerStatus status,
@@ -73,7 +73,7 @@ public class CustomerController  {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
         return ResponseEntity.ok(ApiResponse.success("Customer soft-deleted successfully", null));

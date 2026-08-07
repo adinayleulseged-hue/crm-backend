@@ -1,7 +1,8 @@
 package com.crm.crm_backend.security.SecurityConfig;
 
+import com.crm.crm_backend.security.KeycloakRealmRoleConverter;
 import com.crm.crm_backend.security.JwtFilter.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,13 +24,20 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectProvider<JwtAuthenticationFilter> legacyJwtFilter;
+    private final String authMode;
+    private final String allowedOrigins;
 
-    @Value("${crm.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
-    private String allowedOrigins;
+    public SecurityConfig(
+            ObjectProvider<JwtAuthenticationFilter> legacyJwtFilter,
+            @Value("${crm.security.auth-mode:keycloak}") String authMode,
+            @Value("${crm.cors.allowed-origins:http://localhost:3000,http://localhost:5173}") String allowedOrigins) {
+        this.legacyJwtFilter = legacyJwtFilter;
+        this.authMode = authMode;
+        this.allowedOrigins = allowedOrigins;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -47,8 +55,17 @@ public class SecurityConfig {
                                 "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                );
+
+        if ("legacy".equalsIgnoreCase(authMode)) {
+            JwtAuthenticationFilter filter = legacyJwtFilter.getIfAvailable();
+            if (filter != null) {
+                http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+            }
+        } else {
+            http.oauth2ResourceServer(oauth -> oauth
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRealmRoleConverter())));
+        }
 
         return http.build();
     }

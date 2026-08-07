@@ -16,7 +16,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<DashboardKpiResponseDTO>> getDashboard() {
 
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboardKpis()));

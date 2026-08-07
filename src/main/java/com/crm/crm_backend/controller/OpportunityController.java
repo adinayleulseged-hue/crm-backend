@@ -23,7 +23,7 @@ public class OpportunityController {
     private final OpportunityService opportunityService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<OpportunityResponseDTO>> createOpportunity(
             @Valid @RequestBody OpportunityCreateDTO dto) {
 
@@ -32,7 +32,7 @@ public class OpportunityController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<OpportunityResponseDTO>> getOpportunityById(
             @PathVariable Long id) {
 
@@ -40,7 +40,7 @@ public class OpportunityController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<OpportunityResponseDTO>>> getAllOpportunities(
             Pageable pageable) {
 
@@ -48,7 +48,7 @@ public class OpportunityController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<OpportunityResponseDTO>> updateOpportunity(
             @PathVariable Long id,
             @Valid @RequestBody OpportunityUpdateDTO dto) {
@@ -57,7 +57,7 @@ public class OpportunityController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteOpportunity(
             @PathVariable Long id) {
 
@@ -66,7 +66,7 @@ public class OpportunityController {
     }
 
     @PatchMapping("/{id}/stage")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<OpportunityResponseDTO>> updateStage(
             @PathVariable Long id,
             @RequestParam OpportunityStage stage) {

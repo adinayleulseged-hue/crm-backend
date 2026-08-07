@@ -16,7 +16,7 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<SalesForecastResponseDTO>> getAnalytics() {
 
         return ResponseEntity.ok(ApiResponse.success(analyticsService.getAnalytics()));

@@ -22,7 +22,7 @@ public class SalesOrderController {
     private final SalesOrderService salesOrderService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> createSalesOrder(
             @Valid @RequestBody SalesOrderCreateDTO dto) {
 
@@ -31,7 +31,7 @@ public class SalesOrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> getSalesOrderById(
             @PathVariable Long id) {
 
@@ -39,7 +39,7 @@ public class SalesOrderController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<Page<SalesOrderResponseDTO>>> getAllSalesOrders(
             Pageable pageable) {
 
@@ -47,7 +47,7 @@ public class SalesOrderController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> updateSalesOrder(
             @PathVariable Long id,
             @Valid @RequestBody SalesOrderUpdateDTO dto) {
@@ -56,7 +56,7 @@ public class SalesOrderController {
     }
 
     @PatchMapping("/{id}/confirm")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> confirmSalesOrder(
             @PathVariable Long id) {
 
@@ -66,7 +66,7 @@ public class SalesOrderController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteSalesOrder(
             @PathVariable Long id) {
 

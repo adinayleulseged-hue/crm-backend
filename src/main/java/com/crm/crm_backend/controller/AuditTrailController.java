@@ -22,19 +22,19 @@ public class AuditTrailController {
     private final AuditTrailService auditTrailService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getAllAuditTrails() {
         return ResponseEntity.ok(ApiResponse.success(auditTrailService.getAllAuditTrails()));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<AuditTrailResponseDTO>> getAuditTrailById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(auditTrailService.getAuditTrailById(id)));
     }
 
     @GetMapping("/module/{module}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByModule(
             @PathVariable AuditModule module) {
 
@@ -42,7 +42,7 @@ public class AuditTrailController {
     }
 
     @GetMapping("/action/{action}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByAction(
             @PathVariable AuditAction action) {
 
@@ -50,7 +50,7 @@ public class AuditTrailController {
     }
 
     @GetMapping("/user/{performedBy}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByPerformedBy(
             @PathVariable String performedBy) {
 
@@ -58,7 +58,7 @@ public class AuditTrailController {
     }
 
     @GetMapping("/date-range")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByDateRange(
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

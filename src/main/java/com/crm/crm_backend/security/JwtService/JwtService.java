@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -12,10 +13,11 @@ import java.util.Date;
 import java.util.function.Function;
 
 /**
- * JWT resource-server validation only. Tokens are issued by auth-service
- * using the shared {@code crm.security.jwt.secret}.
+ * Legacy HS256 JWT validation for auth-service tokens.
+ * Active only when {@code crm.security.auth-mode=legacy}.
  */
 @Service
+@ConditionalOnProperty(name = "crm.security.auth-mode", havingValue = "legacy")
 public class JwtService {
 
     @Value("${crm.security.jwt.secret}")

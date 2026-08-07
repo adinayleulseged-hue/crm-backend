@@ -1,31 +1,34 @@
 # CRM Backend (INSA)
 
-Spring Boot CRM microservice for the ERP system, now fronted by an API Gateway with a shared Auth Service.
+Spring Boot CRM microservice for the INSA ERP system. Auth follows the **ERP Keycloak standard**
+(OAuth2 resource server). An optional API Gateway and legacy auth-service remain in-repo.
 
 ## Services in this repo
 
 | Service | Port | Role |
 |---------|------|------|
-| `api-gateway/` | **8080** | Entry point — routes `/api/auth/**` → Auth, `/api/**` → CRM |
-| `auth-service/` | **8081** | Issues JWT (login/register), owns `auth_users` |
-| CRM (root) | **8082** | JWT resource server — CRM domain APIs only |
+| Keycloak (ERP-INSA) | **8080** | Identity provider — realm `erp` |
+| `api-gateway/` | **8090** | Optional edge entry — routes `/api/**` → CRM (validates Keycloak JWT) |
+| `auth-service/` | **8081** | **Legacy** — HS256 login/register (only if `CRM_AUTH_MODE=legacy`) |
+| CRM (root) | **8082** | Keycloak resource server — CRM domain APIs |
 
 ## Stack
 
 - Java 21, Spring Boot 3.5.16
-- Spring Cloud Gateway 2025.0
+- Spring Security OAuth2 Resource Server (Keycloak JWKS)
+- Spring Cloud Gateway 2025.0 (optional)
 - PostgreSQL (Neon shared team database) + Flyway
-- Spring Security + JWT (JJWT 0.12.6)
 - RabbitMQ (async domain events)
-- WebClient integrations (HRM / MMS / FMS / Auth)
+- WebClient integrations (HRM / MMS / FMS)
 - MapStruct, Lombok, Maven
 
 ## Prerequisites
 
 - JDK 21+
 - Maven Wrapper (`mvnw` / `mvnw.cmd`) at repo root
-- Docker Desktop (for RabbitMQ)
+- Docker Desktop (RabbitMQ; Keycloak via ERP-INSA `docker compose`)
 - Neon PostgreSQL connection details from the team
+- Keycloak running with realm `erp` (see ERP-INSA `docs/architecture/keycloak-auth.md`)
 
 ## Setup
 
@@ -33,83 +36,77 @@ Spring Boot CRM microservice for the ERP system, now fronted by an API Gateway w
 
 ```bash
 copy src\main\resources\application.properties.example src\main\resources\application.properties
-copy auth-service\src\main\resources\application.properties.example auth-service\src\main\resources\application.properties
 ```
 
-Fill Neon URL/user/password in **both** CRM and Auth property files.  
-Use the **same** `JWT_SECRET` in Auth (`auth.security.jwt.secret`) and CRM (`crm.security.jwt.secret`).
+Fill Neon URL/user/password. Set:
 
-`application.properties` files are gitignored — never commit secrets.  
-Gateway config (`api-gateway/.../application.properties`) has no secrets and is committed.
-
-### 2. Start RabbitMQ + Redis
-
-```bash
-docker compose up -d rabbitmq redis
+```properties
+crm.security.auth-mode=keycloak
+spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8080/realms/erp
 ```
 
-Redis is used for the **shared JWT blacklist** after logout (`auth:jwt:blacklist:{jti}`).  
-If Redis is unavailable locally, set `REDIS_BLACKLIST_ENABLED=false` on auth, gateway, and CRM.
-### 3. Run all three services
+`application.properties` is gitignored — never commit secrets.
+
+### 2. Start dependencies
 
 ```bash
-# Terminal 1 — Auth
-cd auth-service
-..\mvnw.cmd spring-boot:run
+# From ERP-INSA repo — Keycloak on :8080
+docker compose up -d
 
-# Terminal 2 — CRM
+# From this repo — RabbitMQ
+docker compose up -d rabbitmq
+```
+
+### 3. Run CRM (+ optional gateway)
+
+```bash
+# Terminal 1 — CRM
 .\mvnw.cmd spring-boot:run
 
-# Terminal 3 — Gateway
+# Terminal 2 — Gateway (optional)
 cd api-gateway
 ..\mvnw.cmd spring-boot:run
 ```
 
-Clients should call the **gateway** at **http://localhost:8080**.
+Frontend / clients:
 
-## Auth (JWT) — via Auth Service / Gateway
+- Prefer calling CRM at **http://localhost:8082** with `Authorization: Bearer <Keycloak access token>`
+- Or via gateway at **http://localhost:8090**
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/auth/login` | Access + refresh tokens |
-| POST | `/api/auth/register` | Register a user (same token pair) |
-| POST | `/api/auth/refresh` | Rotate refresh token; issue new access token |
-| POST | `/api/auth/logout` | Blacklist access `jti` + revoke refresh tokens |
-| GET | `/api/auth/me` | Current user profile (JWT required) |
-| GET | `/api/auth/users?role=&territoryId=` | List enabled users (ADMIN only) |
+## Auth (ERP standard — Keycloak)
 
-Defaults: access token **15 minutes** (`JWT_EXPIRATION_MS`), refresh token **7 days** (`JWT_REFRESH_EXPIRATION_MS`).
+Login is owned by **Keycloak** (and the Next.js app in ERP-INSA). CRM does **not** issue tokens.
 
-On logout, auth-service blacklists the access token `jti` in Postgres **and** Redis.  
-API Gateway (and CRM) reject blacklisted tokens immediately — not only after natural expiry.
+| Claim / role | Meaning |
+|--------------|---------|
+| `realm_access.roles` | Mapped to Spring authorities verbatim |
+| `admin` | Full access |
+| `crm_user` | CRM module access |
+| `fms_user` | Allowed on CRM finance-ish endpoints (invoices/payments/audit) |
+| `preferred_username` | Audit `performedBy` |
 
-CRM no longer owns users (`crm_users` dropped in Flyway `V2__drop_crm_users.sql`).  
-CRM validates JWTs from Auth Service claims only (signature + expiry + optional Redis blacklist).
+Use `@PreAuthorize("hasAuthority('crm_user')")` / `hasAnyAuthority('admin', 'crm_user')` — **not** `hasRole` (no `ROLE_` prefix).
 
-### Seeded users (Auth Service)
+### Get a token (local curl)
 
-| Username | Password | Role |
-|----------|----------|------|
-| admin | admin123 | ADMIN |
-| sales | sales123 | SALES_OFFICER |
-| finance | finance123 | FINANCE_OFFICER |
-| employee | employee123 | EMPLOYEE |
+Enable Direct Access Grants on client `erp-frontend` in Keycloak, then:
 
-### Example login (through gateway)
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/realms/erp/protocol/openid-connect/token \
+  -d grant_type=password -d client_id=erp-frontend \
+  -d client_secret=<secret> \
+  -d username=erp-admin -d password=<password> | jq -r .access_token)
 
-```http
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "admin123"
-}
+curl http://localhost:8082/api/leads -H "Authorization: Bearer $TOKEN"
 ```
 
-Response `data` includes `accessToken`, `refreshToken`, `expiresInMs`, `refreshExpiresInMs`.
+Seeded Keycloak user (ERP-INSA realm export): `erp-admin` (reset password on first login) with all module roles.
 
-Use `Authorization: Bearer <accessToken>` on CRM routes (see `test.http`).
+### Legacy auth-service (optional)
+
+Set `CRM_AUTH_MODE=legacy` and run `auth-service` if you need the old HS256 `/api/auth/login` flow. Default is Keycloak.
+
+---
 
 ## End-to-end sales pipeline (happy path)
 
@@ -151,7 +148,7 @@ Transitions are enforced by `DomainStatusGuard`. Full request bodies and comment
 
 | Feature | Config |
 |---------|--------|
-| Optional JWT at edge | `GATEWAY_JWT_ENABLED=true` + shared `JWT_SECRET` |
+| Optional JWT at edge | `GATEWAY_JWT_ENABLED=true` + `KEYCLOAK_ISSUER_URI` |
 | Rate limit | `GATEWAY_RATE_LIMIT_RPM` (default 120/IP/min) |
 | Body size | `GATEWAY_MAX_CONTENT_LENGTH` (default 2MB) |
 | CORS | `GATEWAY_CORS_ORIGINS` — comma-separated, not `*` |
@@ -163,17 +160,14 @@ Transitions are enforced by `DomainStatusGuard`. Full request bodies and comment
 
 ## Security
 
-Mutating CRM endpoints use `@PreAuthorize` (`ADMIN`, `SALES_OFFICER`, `FINANCE_OFFICER`, `EMPLOYEE`).  
-CORS uses explicit origins (SecurityConfig / gateway / auth) — controllers no longer use `@CrossOrigin(*)`.
+CRM endpoints use `@PreAuthorize` with Keycloak realm authorities (`admin`, `crm_user`, `fms_user`).  
+CORS uses explicit origins (SecurityConfig / gateway) — not `@CrossOrigin(*)`.
 
-| Auth endpoint | Access |
-|---------------|--------|
-| `POST /api/auth/login` | Public |
-| `POST /api/auth/register` | Public for `EMPLOYEE` / `SALES_OFFICER` / `FINANCE_OFFICER` only; elevated roles need ADMIN JWT |
-| `POST /api/auth/refresh` | Public (valid refresh token required in body) |
-| `POST /api/auth/logout` | Public (accepts Bearer access and/or refresh token body) |
-| `GET /api/auth/me` | JWT required |
-| `GET /api/auth/users` | ADMIN JWT required (`role`, `territoryId` optional filters) |
+| Token source | Access |
+|--------------|--------|
+| Keycloak access token with `crm_user` or `admin` | CRM domain APIs |
+| Keycloak access token with `fms_user` | CRM invoice/payment/audit endpoints (shared) |
+| No / invalid token | `401 Unauthorized` |
 
 Gateway JWT defaults **on** (`GATEWAY_JWT_ENABLED=true`). Set `INTEGRATION_ALLOW_FALLBACK=false` in production so MMS/FMS do not fake success.
 
@@ -189,11 +183,10 @@ Exchange: `erp.events` (topic)
 | `payment.received` | Create payment |
 | `lead.created` / `lead.qualified` / `lead.converted` | Lead lifecycle |
 
-## Main API areas (via gateway :8080)
+## Main API areas (CRM :8082 or gateway :8090)
 
 | Area | Base path |
 |------|-----------|
-| Auth | `/api/auth` |
 | Customers | `/api/customers` (alias: `/api/crm/customers`) |
 | Leads | `/api/leads` |
 | Opportunities | `/api/opportunities` |
@@ -236,7 +229,7 @@ Optional query filters on list endpoints (all combine with Spring `Pageable`):
 | `GET /api/quotations` | `q`, `status`, `customerId`, `opportunityId`, `issueFrom`, `issueTo`, `expiryFrom`, `expiryTo` |
 | `GET /api/invoices` | `q`, `status`, `customerId`, `salesOrderId`, `dueFrom`, `dueTo`, `invoiceFrom`, `invoiceTo` |
 
-`territoryId` on leads/customers links CRM records to `/api/territories`. Auth users may also carry `territoryId` (register body + `UserProfileDTO`); admins can filter `GET /api/auth/users?territoryId=`.
+`territoryId` on leads/customers links CRM records to `/api/territories`. Assign territory managers via `/api/territories` (`managerUsername` should match Keycloak `preferred_username`).
 
 Lead auto-assignment (`LeadAssignmentService`): prefers the territory `managerUsername`, otherwise round-robins usernames from `crm.lead.assignment.officers` (comma-separated, default `sales`). Disable with `crm.lead.assignment.enabled=false`.
 
@@ -285,14 +278,15 @@ CSV exports (`text/csv`):
 - Swagger UI: http://localhost:8082/swagger-ui.html  
 - OpenAPI JSON: http://localhost:8082/v3/api-docs  
 
-Also reachable via the gateway once routed. Use **Authorize** with a JWT from `/api/auth/login`.
+Also reachable via the gateway once routed. Use **Authorize** with a Keycloak access token.
 
 ## Architecture
 
 ```
-Client → API Gateway :8080
-            ├─ /api/auth/**  → Auth Service :8081  (issues JWT, auth_users)
-            └─ /api/**       → CRM :8082           (validates JWT, domain CRUD)
+Client (Next.js) → Keycloak :8080  (login, issues JWT)
+                 → CRM :8082       (validates JWT via JWKS, domain CRUD)
+                    optional:
+                 → Gateway :8090 → CRM :8082
                                   ├─ Neon Postgres (Flyway)
                                   └─ RabbitMQ erp.events → notification / finance / inventory
 ```
@@ -303,7 +297,6 @@ Client → API Gateway :8080
 .\mvnw.cmd clean package
 .\mvnw.cmd test
 .\mvnw.cmd spring-boot:run
-cd auth-service && ..\mvnw.cmd spring-boot:run
 cd api-gateway && ..\mvnw.cmd spring-boot:run
 docker compose up -d rabbitmq
 ```

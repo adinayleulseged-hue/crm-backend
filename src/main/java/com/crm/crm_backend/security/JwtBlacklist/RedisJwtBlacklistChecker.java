@@ -7,7 +7,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(name = "crm.security.jwt.blacklist-enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "crm.security.jwt.blacklist-enabled", havingValue = "true")
 @ConditionalOnBean(StringRedisTemplate.class)
 public class RedisJwtBlacklistChecker {
 

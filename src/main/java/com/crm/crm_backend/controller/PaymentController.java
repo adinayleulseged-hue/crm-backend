@@ -22,7 +22,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<PaymentResponseDTO>> createPayment(
             @Valid @RequestBody PaymentCreateDTO dto) {
 
@@ -31,7 +31,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<PaymentResponseDTO>> getPayment(
             @PathVariable Long id) {
 
@@ -39,7 +39,7 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<PaymentResponseDTO>>> getAllPayments(
             Pageable pageable) {
 
@@ -47,7 +47,7 @@ public class PaymentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<PaymentResponseDTO>> updatePayment(
             @PathVariable Long id,
             @Valid @RequestBody PaymentUpdateDTO dto) {
@@ -56,7 +56,7 @@ public class PaymentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deletePayment(
             @PathVariable Long id) {
 

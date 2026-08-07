@@ -28,7 +28,7 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<InvoiceResponseDTO>> createInvoice(
             @Valid @RequestBody InvoiceCreateDTO dto) {
 
@@ -37,7 +37,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/export.csv")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<String> exportInvoices(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) InvoiceStatus status,
@@ -57,7 +57,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<InvoiceResponseDTO>> getInvoice(
             @PathVariable Long id) {
 
@@ -65,7 +65,7 @@ public class InvoiceController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
     public ResponseEntity<ApiResponse<Page<InvoiceResponseDTO>>> getAllInvoices(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) InvoiceStatus status,
@@ -83,7 +83,7 @@ public class InvoiceController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
     public ResponseEntity<ApiResponse<InvoiceResponseDTO>> updateInvoice(
             @PathVariable Long id,
             @Valid @RequestBody InvoiceUpdateDTO dto) {
@@ -92,7 +92,7 @@ public class InvoiceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteInvoice(
             @PathVariable Long id) {
 

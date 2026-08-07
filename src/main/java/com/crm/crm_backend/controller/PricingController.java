@@ -23,7 +23,7 @@ public class PricingController {
     private final PricingService pricingService;
 
     @PostMapping("/rules")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<PricingRuleResponseDTO>> createRule(
             @Valid @RequestBody PricingRuleRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -31,19 +31,19 @@ public class PricingController {
     }
 
     @GetMapping("/rules/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<PricingRuleResponseDTO>> getRule(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(pricingService.getRule(id)));
     }
 
     @GetMapping("/rules")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<Page<PricingRuleResponseDTO>>> getAllRules(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(pricingService.getAllRules(pageable)));
     }
 
     @PutMapping("/rules/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<PricingRuleResponseDTO>> updateRule(
             @PathVariable Long id,
             @Valid @RequestBody PricingRuleRequestDTO dto) {
@@ -53,14 +53,14 @@ public class PricingController {
     }
 
     @DeleteMapping("/rules/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<ApiResponse<Void>> deleteRule(@PathVariable Long id) {
         pricingService.deleteRule(id);
         return ResponseEntity.ok(ApiResponse.success("Pricing rule deleted", null));
     }
 
     @PostMapping("/apply")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<PricingApplyResponseDTO>> applyPricing(
             @Valid @RequestBody PricingApplyRequestDTO dto) {
         return ResponseEntity.ok(ApiResponse.success(

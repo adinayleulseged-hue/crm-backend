@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,10 +21,12 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Validates JWTs issued by the shared Auth Service using claim-based authorities
- * (no local user store lookup). Optionally rejects blacklisted jti via Redis.
+ * Legacy HS256 JWT filter for auth-service tokens.
+ * Active only when {@code crm.security.auth-mode=legacy}.
+ * Default ERP mode uses Keycloak OAuth2 resource server instead.
  */
 @Component
+@ConditionalOnProperty(name = "crm.security.auth-mode", havingValue = "legacy")
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

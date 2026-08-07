@@ -24,13 +24,19 @@ spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 logging.level.org.springframework.web=DEBUG
 logging.level.org.flywaydb=INFO
 
-# JWT validation only (must match auth-service auth.security.jwt.secret)
+# Auth mode: keycloak (ERP standard, default) | legacy (local auth-service HS256)
+crm.security.auth-mode=${CRM_AUTH_MODE:keycloak}
+
+# Keycloak OAuth2 resource server (issuer must match token "iss")
+spring.security.oauth2.resourceserver.jwt.issuer-uri=${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/erp}
+
+# Legacy HS256 (only when crm.security.auth-mode=legacy)
 crm.security.jwt.secret=${JWT_SECRET:Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==}
 crm.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:900000}
-crm.security.jwt.blacklist-enabled=${REDIS_BLACKLIST_ENABLED:true}
+crm.security.jwt.blacklist-enabled=${REDIS_BLACKLIST_ENABLED:false}
 crm.security.jwt.blacklist-fail-closed=${REDIS_BLACKLIST_FAIL_CLOSED:true}
 
-# Redis shared JWT blacklist (docker compose up -d redis)
+# Redis (optional; used by legacy JWT blacklist)
 spring.data.redis.host=${REDIS_HOST:localhost}
 spring.data.redis.port=${REDIS_PORT:6379}
 spring.data.redis.password=${REDIS_PASSWORD:}
@@ -83,7 +89,7 @@ management.health.rabbit.enabled=true
 management.health.mail.enabled=true
 management.info.env.enabled=true
 info.app.name=crm-backend
-info.app.description=INSA CRM microservice (JWT resource server)
+info.app.description=INSA CRM microservice (Keycloak OAuth2 resource server)
 info.app.version=0.0.1-SNAPSHOT
 
 # SpringDoc OpenAPI

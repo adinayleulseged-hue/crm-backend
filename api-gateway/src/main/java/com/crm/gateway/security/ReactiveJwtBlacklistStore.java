@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
-@ConditionalOnProperty(name = "gateway.security.jwt.blacklist-enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "gateway.security.jwt.blacklist-enabled", havingValue = "true")
 @ConditionalOnBean(ReactiveStringRedisTemplate.class)
 public class ReactiveJwtBlacklistStore {
 
