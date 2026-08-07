@@ -130,6 +130,13 @@ public class SalesOrderService {
         SalesOrder order = salesOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sales Order not found"));
 
+        if (order.getStatus() == OrderStatus.APPROVED
+                || order.getStatus() == OrderStatus.PROCESSING
+                || order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Sales order already confirmed (status=" + order.getStatus() + ") — cannot confirm twice");
+        }
+
         order.getOrderItems().size();
         salesOrderValidator.validateCanConfirm(order);
         DomainStatusGuard.assertOrderTransition(order.getStatus(), OrderStatus.APPROVED);

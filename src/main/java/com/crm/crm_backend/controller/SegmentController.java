@@ -21,7 +21,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/segments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SegmentController {
 
     private final SegmentService segmentService;

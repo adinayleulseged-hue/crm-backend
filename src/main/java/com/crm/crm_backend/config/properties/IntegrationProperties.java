@@ -20,6 +20,11 @@ public class IntegrationProperties {
     public static class ServiceEndpoint {
         private String baseUrl;
         private boolean enabled = true;
+        /**
+         * When false, upstream failures return empty/false instead of fake success data.
+         * Keep true for local/dev; set false in production.
+         */
+        private boolean allowFallback = true;
 
         public ServiceEndpoint() {
         }

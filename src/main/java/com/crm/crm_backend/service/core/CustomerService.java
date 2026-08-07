@@ -54,7 +54,7 @@ public class                                                        CustomerServ
 
     @Transactional(readOnly = true)
     public CustomerResponseDTO getCustomerById(Long id) {
-        Customer customer = customerRepository.findById(id)
+        Customer customer = customerRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
 
         return customerMapper.toResponseDTO(customer);
@@ -62,7 +62,7 @@ public class                                                        CustomerServ
 
     @Transactional(readOnly = true)
     public Page<CustomerResponseDTO> getAllCustomers(Pageable pageable) {
-        Page<Customer> customers = customerRepository.findAll(pageable);
+        Page<Customer> customers = customerRepository.findByDeletedFalse(pageable);
         return customers.map(customerMapper::toResponseDTO);
     }
 
@@ -70,7 +70,7 @@ public class                                                        CustomerServ
     public CustomerResponseDTO updateCustomer(Long id, CustomerUpdateDTO dto) {
         log.info("Updating customer with ID: {}", id);
 
-        Customer customer = customerRepository.findById(id)
+        Customer customer = customerRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
 
         customerValidator.validateUpdate(customer, dto);
@@ -92,7 +92,7 @@ public class                                                        CustomerServ
     public void deleteCustomer(Long id) {
         log.info("Deleting customer with ID: {}", id);
 
-        Customer customer = customerRepository.findById(id)
+        Customer customer = customerRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
 
         customer.setDeleted(true);

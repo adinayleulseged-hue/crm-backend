@@ -80,7 +80,7 @@ public class LeadService {
     @Transactional(readOnly = true)
     public LeadResponseDTO getLeadById(Long id) {
 
-        Lead lead = leadRepository.findById(id)
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
@@ -91,7 +91,7 @@ public class LeadService {
     @Transactional(readOnly = true)
     public Page<LeadResponseDTO> getAllLeads(Pageable pageable) {
 
-        return leadRepository.findAll(pageable)
+        return leadRepository.findByDeletedFalse(pageable)
                 .map(leadMapper::toResponseDTO);
     }
 
@@ -99,7 +99,7 @@ public class LeadService {
     public LeadResponseDTO updateLead(Long id,
                                       LeadUpdateDTO dto) {
 
-        Lead lead = leadRepository.findById(id)
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
@@ -120,7 +120,7 @@ public class LeadService {
     @Transactional
     public void deleteLead(Long id) {
 
-        Lead lead = leadRepository.findById(id)
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
@@ -129,16 +129,17 @@ public class LeadService {
             throw new IllegalStateException("Cannot delete a converted lead");
         }
 
-        leadRepository.delete(lead);
+        lead.setDeleted(true);
+        leadRepository.save(lead);
 
-        log.info("Lead deleted {}", id);
+        log.info("Lead soft-deleted {}", id);
     }
 
     @Transactional
     public LeadResponseDTO updateLeadStatus(Long id,
                                             LeadStatus newStatus) {
 
-        Lead lead = leadRepository.findById(id)
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
@@ -164,7 +165,7 @@ public class LeadService {
     public LeadResponseDTO convertLeadToCustomer(Long id,
                                                  LeadConvertDTO dto) {
 
-        Lead lead = leadRepository.findById(id)
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));

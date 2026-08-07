@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/audit-trails")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AuditTrailController {
 
     private final AuditTrailService auditTrailService;

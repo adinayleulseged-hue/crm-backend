@@ -49,6 +49,14 @@ Content-Type: application/json
 ### Copy accessToken from login into @token above, or use:
 ### Authorization: Bearer {{login.response.body.accessToken}}
 
+### Current user profile
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Soft-delete customer (ADMIN)
+DELETE {{baseUrl}}/api/crm/customers/{{customerId}}
+Authorization: Bearer {{token}}
+
 ### ------------------------------------------------------------
 ### 1) Create lead
 ### Expected: 201, status = NEW

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/interactions")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class InteractionController {
 
     private final InteractionService interactionService;

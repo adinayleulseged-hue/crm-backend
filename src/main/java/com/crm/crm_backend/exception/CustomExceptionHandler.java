@@ -15,6 +15,12 @@ import java.util.List;
 @RestControllerAdvice
 public class CustomExceptionHandler {
 
+    @ExceptionHandler(IntegrationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIntegration(IntegrationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateEntityException.class)
     public ResponseEntity<ApiResponse<Void>> handleDuplicate(DuplicateEntityException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

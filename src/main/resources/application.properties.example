@@ -39,29 +39,41 @@ crm.integration.auth.base-url=${AUTH_SERVICE_URL:http://localhost:8081}
 crm.integration.auth.enabled=true
 crm.integration.hrm.base-url=${HRM_SERVICE_URL:http://localhost:8091}
 crm.integration.hrm.enabled=true
+crm.integration.hrm.allow-fallback=${INTEGRATION_ALLOW_FALLBACK:true}
 crm.integration.mms.base-url=${MMS_SERVICE_URL:http://localhost:8092}
 crm.integration.mms.enabled=true
+crm.integration.mms.allow-fallback=${INTEGRATION_ALLOW_FALLBACK:true}
 crm.integration.fms.base-url=${FMS_SERVICE_URL:http://localhost:8093}
 crm.integration.fms.enabled=true
+crm.integration.fms.allow-fallback=${INTEGRATION_ALLOW_FALLBACK:true}
 crm.integration.connect-timeout-ms=3000
 crm.integration.read-timeout-ms=5000
 
-# Notifications (log transport if SMTP not configured)
+# Notifications — email via SMTP; SMS off for now
 crm.notification.email.enabled=true
-crm.notification.email.from=crm-noreply@insa.local
-crm.notification.sms.enabled=true
+crm.notification.email.from=${CRM_MAIL_FROM:crm-noreply@insa.local}
+crm.notification.email.allow-log-fallback=${CRM_MAIL_LOG_FALLBACK:true}
+crm.notification.sms.enabled=false
 crm.notification.sms.provider=log
-crm.notification.default-email=ops@crm.local
+crm.notification.default-email=${CRM_NOTIFY_EMAIL:ops@crm.local}
 crm.notification.default-sms=+10000000000
-# Optional SMTP:
-# spring.mail.host=smtp.example.com
-# spring.mail.port=587
-# spring.mail.username=
-# spring.mail.password=
+
+# SMTP (required for real email delivery)
+spring.mail.host=${SMTP_HOST:smtp.example.com}
+spring.mail.port=${SMTP_PORT:587}
+spring.mail.username=${SMTP_USERNAME:}
+spring.mail.password=${SMTP_PASSWORD:}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
 
 # Actuator / Observability
 management.endpoints.web.exposure.include=health,info,prometheus
 management.endpoint.health.show-details=always
+management.endpoint.health.probes.enabled=true
+management.health.db.enabled=true
+management.health.rabbit.enabled=true
+management.health.mail.enabled=true
 management.info.env.enabled=true
 info.app.name=crm-backend
 info.app.description=INSA CRM microservice (JWT resource server)
@@ -70,3 +82,9 @@ info.app.version=0.0.1-SNAPSHOT
 # SpringDoc OpenAPI
 springdoc.api-docs.path=/v3/api-docs
 springdoc.swagger-ui.path=/swagger-ui.html
+
+# Correlation / logging
+crm.observability.correlation-header=X-Correlation-Id
+
+# CORS (comma-separated; avoid *)
+crm.cors.allowed-origins=${CRM_CORS_ORIGINS:http://localhost:3000,http://localhost:5173}

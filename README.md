@@ -127,15 +127,39 @@ Verified chain (run sequentially via `test.http`):
 
 Transitions are enforced by `DomainStatusGuard`. Full request bodies and comments live in `test.http`.
 
-## Security
-
-Mutating and sensitive CRM endpoints use `@PreAuthorize` role checks (`ADMIN`, `SALES_OFFICER`, `FINANCE_OFFICER`, `EMPLOYEE`).
-
 ## Integrations & notifications
 
 - **WebClient** clients: `AuthClient`, `HrmClient`, `MmsClient`, `FmsClient` (+ fallbacks when upstream is down)
-- **Notification consumer**: RabbitMQ → `NotificationEventListener` → Email/SMS services (log transport if SMTP not configured)
+- **Email**: SMTP via `spring.mail.*` — set host/user/password for real delivery; `crm.notification.email.allow-log-fallback=false` in production
+- **SMS**: off by default (`crm.notification.sms.enabled=false`)
 - Finance / inventory listeners call FMS / MMS clients on invoice, payment, and order-confirm events
+
+## Gateway hardening
+
+| Feature | Config |
+|---------|--------|
+| Optional JWT at edge | `GATEWAY_JWT_ENABLED=true` + shared `JWT_SECRET` |
+| Rate limit | `GATEWAY_RATE_LIMIT_RPM` (default 120/IP/min) |
+| Body size | `GATEWAY_MAX_CONTENT_LENGTH` (default 2MB) |
+| CORS | `GATEWAY_CORS_ORIGINS` — comma-separated, not `*` |
+
+## Observability
+
+- Logs include `[correlationId]` (`X-Correlation-Id` header generated or accepted)
+- Actuator health: DB + RabbitMQ (+ mail when SMTP configured)
+
+## Security
+
+Mutating CRM endpoints use `@PreAuthorize` (`ADMIN`, `SALES_OFFICER`, `FINANCE_OFFICER`, `EMPLOYEE`).  
+CORS uses explicit origins (SecurityConfig / gateway / auth) — controllers no longer use `@CrossOrigin(*)`.
+
+| Auth endpoint | Access |
+|---------------|--------|
+| `POST /api/auth/login` | Public |
+| `POST /api/auth/register` | Public for `EMPLOYEE` / `SALES_OFFICER` / `FINANCE_OFFICER` only; elevated roles need ADMIN JWT |
+| `GET /api/auth/me` | JWT required |
+
+Gateway JWT defaults **on** (`GATEWAY_JWT_ENABLED=true`). Set `INTEGRATION_ALLOW_FALLBACK=false` in production so MMS/FMS do not fake success.
 
 ## RabbitMQ events
 

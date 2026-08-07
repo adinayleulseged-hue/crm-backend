@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/leads")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class LeadController {
 
     private final LeadService leadService;

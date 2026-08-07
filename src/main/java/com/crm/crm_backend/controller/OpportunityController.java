@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/opportunities")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class OpportunityController {
 
     private final OpportunityService opportunityService;

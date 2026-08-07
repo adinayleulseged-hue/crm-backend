@@ -1,6 +1,7 @@
 package com.crm.crm_backend.integration.client;
 
 import com.crm.crm_backend.config.properties.IntegrationProperties;
+import com.crm.crm_backend.exception.IntegrationException;
 import com.crm.crm_backend.integration.dto.FmsInvoiceDTO;
 import com.crm.crm_backend.integration.dto.FmsTransactionDTO;
 import com.crm.crm_backend.integration.fallback.FmsClientFallback;
@@ -24,7 +25,7 @@ public class FmsClient {
 
     public Optional<FmsInvoiceDTO> postInvoice(String invoiceNumber, BigDecimal amount, String currency) {
         if (!integrationProperties.getFms().isEnabled()) {
-            return Optional.ofNullable(fmsClientFallback.fallbackInvoice(invoiceNumber, amount, currency));
+            return disabledOrFallbackInvoice(invoiceNumber, amount, currency);
         }
         try {
             FmsInvoiceDTO posted = webClientBuilder.build()
@@ -41,13 +42,13 @@ public class FmsClient {
             return Optional.ofNullable(posted);
         } catch (Exception ex) {
             log.warn("FMS postInvoice failed for {}: {}", invoiceNumber, ex.getMessage());
-            return Optional.ofNullable(fmsClientFallback.fallbackInvoice(invoiceNumber, amount, currency));
+            return failClosedOrFallbackInvoice(invoiceNumber, amount, currency, ex);
         }
     }
 
     public Optional<FmsTransactionDTO> recordPayment(String reference, BigDecimal amount) {
         if (!integrationProperties.getFms().isEnabled()) {
-            return Optional.ofNullable(fmsClientFallback.fallbackPayment(reference, amount));
+            return disabledOrFallbackPayment(reference, amount);
         }
         try {
             FmsTransactionDTO tx = webClientBuilder.build()
@@ -64,7 +65,40 @@ public class FmsClient {
             return Optional.ofNullable(tx);
         } catch (Exception ex) {
             log.warn("FMS recordPayment failed for {}: {}", reference, ex.getMessage());
+            return failClosedOrFallbackPayment(reference, amount, ex);
+        }
+    }
+
+    private Optional<FmsInvoiceDTO> disabledOrFallbackInvoice(
+            String invoiceNumber, BigDecimal amount, String currency) {
+        if (integrationProperties.getFms().isAllowFallback()) {
+            return Optional.ofNullable(fmsClientFallback.fallbackInvoice(invoiceNumber, amount, currency));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<FmsTransactionDTO> disabledOrFallbackPayment(String reference, BigDecimal amount) {
+        if (integrationProperties.getFms().isAllowFallback()) {
             return Optional.ofNullable(fmsClientFallback.fallbackPayment(reference, amount));
         }
+        return Optional.empty();
+    }
+
+    private Optional<FmsInvoiceDTO> failClosedOrFallbackInvoice(
+            String invoiceNumber, BigDecimal amount, String currency, Exception ex) {
+        if (integrationProperties.getFms().isAllowFallback()) {
+            return Optional.ofNullable(fmsClientFallback.fallbackInvoice(invoiceNumber, amount, currency));
+        }
+        throw new IntegrationException(
+                "FMS postInvoice failed and fallback is disabled: " + invoiceNumber, ex);
+    }
+
+    private Optional<FmsTransactionDTO> failClosedOrFallbackPayment(
+            String reference, BigDecimal amount, Exception ex) {
+        if (integrationProperties.getFms().isAllowFallback()) {
+            return Optional.ofNullable(fmsClientFallback.fallbackPayment(reference, amount));
+        }
+        throw new IntegrationException(
+                "FMS recordPayment failed and fallback is disabled: " + reference, ex);
     }
 }

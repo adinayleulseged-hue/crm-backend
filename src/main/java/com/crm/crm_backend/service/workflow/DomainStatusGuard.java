@@ -61,7 +61,8 @@ public final class DomainStatusGuard {
         OPPORTUNITY.put(OpportunityStage.CLOSED_LOST, EnumSet.noneOf(OpportunityStage.class));
 
         QUOTATION.put(QuotationStatus.DRAFT, EnumSet.of(
-                QuotationStatus.SENT, QuotationStatus.CANCELLED, QuotationStatus.ACCEPTED));
+                QuotationStatus.SENT, QuotationStatus.CANCELLED, QuotationStatus.ACCEPTED,
+                QuotationStatus.EXPIRED));
         QUOTATION.put(QuotationStatus.SENT, EnumSet.of(
                 QuotationStatus.ACCEPTED, QuotationStatus.REJECTED, QuotationStatus.EXPIRED,
                 QuotationStatus.CANCELLED, QuotationStatus.DRAFT));

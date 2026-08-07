@@ -21,6 +21,13 @@ public class EmailService {
     @Value("${crm.notification.email.enabled:true}")
     private boolean enabled;
 
+    /**
+     * When true and SMTP is not configured, fall back to log transport (dev only).
+     * Production should set this false so missing SMTP fails loudly.
+     */
+    @Value("${crm.notification.email.allow-log-fallback:true}")
+    private boolean allowLogFallback;
+
     public boolean send(String to, String subject, String body) {
         if (!enabled) {
             log.info("Email disabled — would send to={} subject={}", to, subject);
@@ -29,8 +36,12 @@ public class EmailService {
 
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.info("EMAIL SENT (log transport) to={} subject={} body={}", to, subject, body);
-            return true;
+            if (allowLogFallback) {
+                log.info("EMAIL SENT (log transport) to={} subject={} body={}", to, subject, body);
+                return true;
+            }
+            log.error("EMAIL FAILED — SMTP not configured (spring.mail.host) and log fallback disabled");
+            return false;
         }
 
         try {
@@ -44,8 +55,11 @@ public class EmailService {
             return true;
         } catch (Exception ex) {
             log.error("EMAIL FAILED to={} subject={}: {}", to, subject, ex.getMessage());
-            log.info("EMAIL FALLBACK (log transport) to={} subject={} body={}", to, subject, body);
-            return true;
+            if (allowLogFallback) {
+                log.info("EMAIL FALLBACK (log transport) to={} subject={} body={}", to, subject, body);
+                return true;
+            }
+            return false;
         }
     }
 }

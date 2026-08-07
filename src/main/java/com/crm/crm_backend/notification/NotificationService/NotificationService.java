@@ -20,6 +20,12 @@ public class NotificationService {
     @Value("${crm.notification.default-email:ops@crm.local}")
     private String defaultEmail;
 
+    @Value("${crm.notification.email.enabled:true}")
+    private boolean emailEnabled;
+
+    @Value("${crm.notification.sms.enabled:false}")
+    private boolean smsEnabled;
+
     @Value("${crm.notification.default-sms:+10000000000}")
     private String defaultSms;
 
@@ -27,11 +33,23 @@ public class NotificationService {
         String subject = "[CRM] " + event.getEventName();
         String body = buildBody(event);
 
-        NotificationDTO email = notificationClient.sendEmail(defaultEmail, subject, body);
-        NotificationDTO sms = notificationClient.sendSms(defaultSms, subject + " — see email for details");
+        boolean emailDelivered = false;
+        if (emailEnabled) {
+            NotificationDTO email = notificationClient.sendEmail(defaultEmail, subject, body);
+            emailDelivered = email.isDelivered();
+        } else {
+            log.debug("Email notifications disabled — skipped event={}", event.getEventName());
+        }
+
+        boolean smsDelivered = false;
+        if (smsEnabled) {
+            NotificationDTO sms = notificationClient.sendSms(
+                    defaultSms, subject + " — see email for details");
+            smsDelivered = sms.isDelivered();
+        }
 
         log.info("Notification completed event={} emailDelivered={} smsDelivered={}",
-                event.getEventName(), email.isDelivered(), sms.isDelivered());
+                event.getEventName(), emailDelivered, smsDelivered);
     }
 
     private String buildBody(DomainEventMessage event) {

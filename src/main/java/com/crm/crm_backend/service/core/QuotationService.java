@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -73,21 +74,25 @@ public class QuotationService {
         return toResponse(saved);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public QuotationResponseDTO getQuotation(Long id) {
 
         Quotation quotation = quotationRepository.findById(id)
                 .orElseThrow(() ->
                         new QuotationNotFoundException("Quotation not found: " + id));
 
+        expireIfPastDue(quotation);
         return toResponse(quotation);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<QuotationResponseDTO> getAllQuotations(Pageable pageable) {
 
         return quotationRepository.findAll(pageable)
-                .map(this::toResponse);
+                .map(q -> {
+                    expireIfPastDue(q);
+                    return toResponse(q);
+                });
     }
 
     public QuotationResponseDTO updateQuotation(Long id,
@@ -125,10 +130,13 @@ public class QuotationService {
         Quotation quotation = quotationRepository.findById(id)
                 .orElseThrow(() -> new QuotationNotFoundException("Quotation not found: " + id));
 
-        if (salesOrderRepository.existsByQuotationId(quotation.getId())) {
+        if (quotation.getStatus() == QuotationStatus.ACCEPTED
+                || salesOrderRepository.existsByQuotationId(quotation.getId())) {
             throw new IllegalStateException(
-                    "Quotation already accepted and linked to a sales order");
+                    "Quotation already accepted — cannot accept twice");
         }
+
+        expireIfPastDue(quotation);
 
         quotationValidator.validateCanAccept(quotation);
         DomainStatusGuard.assertQuotationTransition(quotation.getStatus(), QuotationStatus.ACCEPTED);
@@ -254,5 +262,80 @@ public class QuotationService {
         salesOrderRepository.findByQuotationId(quotation.getId())
                 .ifPresent(order -> dto.setSalesOrderId(order.getId()));
         return dto;
+    }
+
+    /**
+     * On-read / on-accept: mark DRAFT/SENT quotations past expiryDate as EXPIRED.
+     */
+    void expireIfPastDue(Quotation quotation) {
+        if (quotation == null || quotation.getExpiryDate() == null) {
+            return;
+        }
+        if (quotation.getStatus() != QuotationStatus.DRAFT
+                && quotation.getStatus() != QuotationStatus.SENT) {
+            return;
+        }
+        if (!quotation.getExpiryDate().isBefore(LocalDate.now())) {
+            return;
+        }
+        DomainStatusGuard.assertQuotationTransition(quotation.getStatus(), QuotationStatus.EXPIRED);
+        quotation.setStatus(QuotationStatus.EXPIRED);
+        quotationRepository.save(quotation);
+        log.info("Quotation {} expired on-read (expiryDate={})",
+                quotation.getQuotationNumber(), quotation.getExpiryDate());
+    }
+
+    /**
+     * Batch job: expire all open quotations past their expiry date.
+     */
+    public int expirePastDueQuotations() {
+        LocalDate today = LocalDate.now();
+        int count = 0;
+        for (QuotationStatus status : List.of(QuotationStatus.DRAFT, QuotationStatus.SENT)) {
+            for (Quotation quotation : quotationRepository.findByStatus(status)) {
+                if (quotation.getExpiryDate() != null && quotation.getExpiryDate().isBefore(today)) {
+                    DomainStatusGuard.assertQuotationTransition(quotation.getStatus(), QuotationStatus.EXPIRED);
+                    quotation.setStatus(QuotationStatus.EXPIRED);
+                    quotationRepository.save(quotation);
+                    count++;
+                }
+            }
+        }
+        if (count > 0) {
+            log.info("Expired {} past-due quotations", count);
+        }
+        return count;
+    }
+
+    /**
+     * Close open quotations when an opportunity is won or lost.
+     * ACCEPTED quotations are left untouched.
+     */
+    public int closeOpenQuotationsForOpportunity(Long opportunityId, boolean won) {
+        List<Quotation> open = quotationRepository.findByOpportunityIdAndStatusIn(
+                opportunityId,
+                List.of(QuotationStatus.DRAFT, QuotationStatus.SENT));
+
+        int count = 0;
+        for (Quotation quotation : open) {
+            QuotationStatus target;
+            if (won) {
+                target = QuotationStatus.CANCELLED;
+            } else if (quotation.getStatus() == QuotationStatus.SENT) {
+                target = QuotationStatus.REJECTED;
+            } else {
+                target = QuotationStatus.CANCELLED;
+            }
+            try {
+                DomainStatusGuard.assertQuotationTransition(quotation.getStatus(), target);
+                quotation.setStatus(target);
+                quotationRepository.save(quotation);
+                count++;
+            } catch (IllegalStateException ex) {
+                log.warn("Could not close quotation {}: {}", quotation.getId(), ex.getMessage());
+            }
+        }
+        log.info("Closed {} open quotations for opportunity {} (won={})", count, opportunityId, won);
+        return count;
     }
 }

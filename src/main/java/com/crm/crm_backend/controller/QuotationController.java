@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/quotations")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class QuotationController {
 
     private final QuotationService quotationService;

@@ -3,12 +3,9 @@ package com.crm.crm_backend.controller;
 // controller/CustomerController.java
 
 import com.crm.crm_backend.common.ApiResponse;
-import com.crm.crm_backend.common.BaseController;
-import com.crm.crm_backend.common.BaseService;
 import com.crm.crm_backend.dto.request.CustomerCreateDTO;
 import com.crm.crm_backend.dto.request.CustomerUpdateDTO;
 import com.crm.crm_backend.dto.response.CustomerResponseDTO;
-import com.crm.crm_backend.model.entity.Customer;
 import com.crm.crm_backend.service.core.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,5 +56,12 @@ public class CustomerController  {
             @PageableDefault(size = 20) Pageable pageable) {
         Page<CustomerResponseDTO> customers = customerService.getAllCustomers(pageable);
         return ResponseEntity.ok(ApiResponse.success(customers));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteCustomer(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.ok(ApiResponse.success("Customer soft-deleted successfully", null));
     }
 }
