@@ -85,7 +85,8 @@ public final class DomainStatusGuard {
         INVOICE.put(InvoiceStatus.SENT, EnumSet.of(
                 InvoiceStatus.PAID, InvoiceStatus.OVERDUE, InvoiceStatus.PENDING, InvoiceStatus.CANCELLED));
         INVOICE.put(InvoiceStatus.OVERDUE, EnumSet.of(InvoiceStatus.PAID, InvoiceStatus.CANCELLED));
-        INVOICE.put(InvoiceStatus.PAID, EnumSet.noneOf(InvoiceStatus.class));
+        // Allow reopening after payment reversal (CANCELLED / REFUNDED payment)
+        INVOICE.put(InvoiceStatus.PAID, EnumSet.of(InvoiceStatus.PENDING));
         INVOICE.put(InvoiceStatus.CANCELLED, EnumSet.noneOf(InvoiceStatus.class));
 
         CAMPAIGN.put(CampaignStatus.PLANNED, EnumSet.of(
