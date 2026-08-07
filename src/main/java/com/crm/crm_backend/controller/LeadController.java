@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.LeadConvertDTO;
 import com.crm.crm_backend.dto.request.LeadCreateDTO;
 import com.crm.crm_backend.dto.request.LeadUpdateDTO;
@@ -23,62 +24,67 @@ public class LeadController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<LeadResponseDTO> createLead(
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> createLead(
             @Valid @RequestBody LeadCreateDTO dto) {
 
         LeadResponseDTO response = leadService.createLead(dto);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Lead created", response));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<LeadResponseDTO> getLeadById(
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> getLeadById(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(leadService.getLeadById(id));
+        return ResponseEntity.ok(ApiResponse.success(leadService.getLeadById(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<Page<LeadResponseDTO>> getAllLeads(
+    public ResponseEntity<ApiResponse<Page<LeadResponseDTO>>> getAllLeads(
             Pageable pageable) {
 
-        return ResponseEntity.ok(leadService.getAllLeads(pageable));
+        return ResponseEntity.ok(ApiResponse.success(leadService.getAllLeads(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<LeadResponseDTO> updateLead(
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> updateLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadUpdateDTO dto) {
 
-        return ResponseEntity.ok(leadService.updateLead(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(leadService.updateLead(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteLead(
+    public ResponseEntity<ApiResponse<Void>> deleteLead(
             @PathVariable Long id) {
 
         leadService.deleteLead(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Lead deleted", null));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<LeadResponseDTO> updateLeadStatus(
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> updateLeadStatus(
             @PathVariable Long id,
             @RequestParam com.crm.crm_backend.model.enums.LeadStatus status) {
 
-        return ResponseEntity.ok(leadService.updateLeadStatus(id, status));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lead status updated",
+                leadService.updateLeadStatus(id, status)));
     }
 
     @PatchMapping("/{id}/convert")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<LeadResponseDTO> convertLead(
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> convertLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadConvertDTO dto) {
 
-        return ResponseEntity.ok(leadService.convertLeadToCustomer(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lead converted",
+                leadService.convertLeadToCustomer(id, dto)));
     }
 }

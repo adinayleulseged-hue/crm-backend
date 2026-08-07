@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.SalesOrderCreateDTO;
 import com.crm.crm_backend.dto.request.SalesOrderUpdateDTO;
 import com.crm.crm_backend.dto.response.SalesOrderResponseDTO;
@@ -22,56 +23,54 @@ public class SalesOrderController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SalesOrderResponseDTO> createSalesOrder(
+    public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> createSalesOrder(
             @Valid @RequestBody SalesOrderCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(salesOrderService.createSalesOrder(dto));
+                .body(ApiResponse.success("Sales order created", salesOrderService.createSalesOrder(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<SalesOrderResponseDTO> getSalesOrderById(
+    public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> getSalesOrderById(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                salesOrderService.getSalesOrder(id));
+        return ResponseEntity.ok(ApiResponse.success(salesOrderService.getSalesOrder(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER')")
-    public ResponseEntity<Page<SalesOrderResponseDTO>> getAllSalesOrders(
+    public ResponseEntity<ApiResponse<Page<SalesOrderResponseDTO>>> getAllSalesOrders(
             Pageable pageable) {
 
-        return ResponseEntity.ok(
-                salesOrderService.getAllSalesOrders(pageable));
+        return ResponseEntity.ok(ApiResponse.success(salesOrderService.getAllSalesOrders(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SalesOrderResponseDTO> updateSalesOrder(
+    public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> updateSalesOrder(
             @PathVariable Long id,
             @Valid @RequestBody SalesOrderUpdateDTO dto) {
 
-        return ResponseEntity.ok(
-                salesOrderService.updateSalesOrder(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(salesOrderService.updateSalesOrder(id, dto)));
     }
 
     @PatchMapping("/{id}/confirm")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SalesOrderResponseDTO> confirmSalesOrder(
+    public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> confirmSalesOrder(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(salesOrderService.confirmSalesOrder(id));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Sales order confirmed",
+                salesOrderService.confirmSalesOrder(id)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteSalesOrder(
+    public ResponseEntity<ApiResponse<Void>> deleteSalesOrder(
             @PathVariable Long id) {
 
         salesOrderService.deleteSalesOrder(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Sales order deleted", null));
     }
 }

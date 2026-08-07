@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.CampaignCreateDTO;
 import com.crm.crm_backend.dto.request.CampaignUpdateDTO;
 import com.crm.crm_backend.dto.response.CampaignResponseDTO;
@@ -22,64 +23,68 @@ public class CampaignController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<CampaignResponseDTO> createCampaign(
+    public ResponseEntity<ApiResponse<CampaignResponseDTO>> createCampaign(
             @Valid @RequestBody CampaignCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(campaignService.createCampaign(dto));
+                .body(ApiResponse.success("Campaign created", campaignService.createCampaign(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<CampaignResponseDTO> getCampaign(
+    public ResponseEntity<ApiResponse<CampaignResponseDTO>> getCampaign(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(campaignService.getCampaign(id));
+        return ResponseEntity.ok(ApiResponse.success(campaignService.getCampaign(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<Page<CampaignResponseDTO>> getAllCampaigns(
+    public ResponseEntity<ApiResponse<Page<CampaignResponseDTO>>> getAllCampaigns(
             Pageable pageable) {
 
-        return ResponseEntity.ok(campaignService.getAllCampaigns(pageable));
+        return ResponseEntity.ok(ApiResponse.success(campaignService.getAllCampaigns(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<CampaignResponseDTO> updateCampaign(
+    public ResponseEntity<ApiResponse<CampaignResponseDTO>> updateCampaign(
             @PathVariable Long id,
             @Valid @RequestBody CampaignUpdateDTO dto) {
 
-        return ResponseEntity.ok(
-                campaignService.updateCampaign(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(campaignService.updateCampaign(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteCampaign(
+    public ResponseEntity<ApiResponse<Void>> deleteCampaign(
             @PathVariable Long id) {
 
         campaignService.deleteCampaign(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Campaign deleted", null));
     }
 
     @PatchMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<CampaignResponseDTO> activateCampaign(@PathVariable Long id) {
-        return ResponseEntity.ok(campaignService.activateCampaign(id));
+    public ResponseEntity<ApiResponse<CampaignResponseDTO>> activateCampaign(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Campaign activated",
+                campaignService.activateCampaign(id)));
     }
 
     @PatchMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<CampaignResponseDTO> completeCampaign(@PathVariable Long id) {
-        return ResponseEntity.ok(campaignService.completeCampaign(id));
+    public ResponseEntity<ApiResponse<CampaignResponseDTO>> completeCampaign(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Campaign completed",
+                campaignService.completeCampaign(id)));
     }
 
     @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<CampaignResponseDTO> cancelCampaign(@PathVariable Long id) {
-        return ResponseEntity.ok(campaignService.cancelCampaign(id));
+    public ResponseEntity<ApiResponse<CampaignResponseDTO>> cancelCampaign(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Campaign cancelled",
+                campaignService.cancelCampaign(id)));
     }
 }

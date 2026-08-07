@@ -18,7 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/crm/customers")
+@RequestMapping({"/api/customers", "/api/crm/customers"})
 @RequiredArgsConstructor
 public class CustomerController  {
 

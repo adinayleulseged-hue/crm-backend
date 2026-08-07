@@ -1,6 +1,9 @@
 ### ============================================================
 ### CRM E2E sales pipeline — happy path
 ### ============================================================
+### Response shape (all CRM APIs):
+###   { "success": true, "message": "...", "data": { ... }, "timestamp": "..." }
+### IDs live under data.id (or data.content[].id for paged lists).
 ### Flow + expected statuses:
 ###   1. Login                         → JWT
 ###   2. Create lead                   → LeadStatus = NEW
@@ -54,7 +57,7 @@ GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### Soft-delete customer (ADMIN)
-DELETE {{baseUrl}}/api/crm/customers/{{customerId}}
+DELETE {{baseUrl}}/api/customers/{{customerId}}
 Authorization: Bearer {{token}}
 
 ### ------------------------------------------------------------
@@ -261,7 +264,7 @@ Content-Type: application/json
 }
 
 ### List customers
-GET {{baseUrl}}/api/crm/customers
+GET {{baseUrl}}/api/customers
 Authorization: Bearer {{token}}
 
 ### Direct Auth Service (bypass gateway)

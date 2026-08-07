@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.response.DashboardKpiResponseDTO;
 import com.crm.crm_backend.service.analytics.DashboardService;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +17,8 @@ public class DashboardController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER')")
-    public ResponseEntity<DashboardKpiResponseDTO> getDashboard() {
+    public ResponseEntity<ApiResponse<DashboardKpiResponseDTO>> getDashboard() {
 
-        return ResponseEntity.ok(
-                dashboardService.getDashboardKpis()
-        );
+        return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboardKpis()));
     }
 }

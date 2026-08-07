@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.OpportunityCreateDTO;
 import com.crm.crm_backend.dto.request.OpportunityUpdateDTO;
 import com.crm.crm_backend.dto.response.OpportunityResponseDTO;
@@ -23,58 +24,55 @@ public class OpportunityController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<OpportunityResponseDTO> createOpportunity(
+    public ResponseEntity<ApiResponse<OpportunityResponseDTO>> createOpportunity(
             @Valid @RequestBody OpportunityCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(opportunityService.createOpportunity(dto));
+                .body(ApiResponse.success("Opportunity created", opportunityService.createOpportunity(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<OpportunityResponseDTO> getOpportunityById(
+    public ResponseEntity<ApiResponse<OpportunityResponseDTO>> getOpportunityById(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                opportunityService.getOpportunityById(id));
+        return ResponseEntity.ok(ApiResponse.success(opportunityService.getOpportunityById(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<Page<OpportunityResponseDTO>> getAllOpportunities(
+    public ResponseEntity<ApiResponse<Page<OpportunityResponseDTO>>> getAllOpportunities(
             Pageable pageable) {
 
-        return ResponseEntity.ok(
-                opportunityService.getAllOpportunities(pageable));
+        return ResponseEntity.ok(ApiResponse.success(opportunityService.getAllOpportunities(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<OpportunityResponseDTO> updateOpportunity(
+    public ResponseEntity<ApiResponse<OpportunityResponseDTO>> updateOpportunity(
             @PathVariable Long id,
             @Valid @RequestBody OpportunityUpdateDTO dto) {
 
-        return ResponseEntity.ok(
-                opportunityService.updateOpportunity(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(opportunityService.updateOpportunity(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteOpportunity(
+    public ResponseEntity<ApiResponse<Void>> deleteOpportunity(
             @PathVariable Long id) {
 
         opportunityService.deleteOpportunity(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Opportunity deleted", null));
     }
 
     @PatchMapping("/{id}/stage")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<OpportunityResponseDTO> updateStage(
+    public ResponseEntity<ApiResponse<OpportunityResponseDTO>> updateStage(
             @PathVariable Long id,
             @RequestParam OpportunityStage stage) {
 
-        return ResponseEntity.ok(
-                opportunityService.updateStage(id, stage));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Opportunity stage updated",
+                opportunityService.updateStage(id, stage)));
     }
 }

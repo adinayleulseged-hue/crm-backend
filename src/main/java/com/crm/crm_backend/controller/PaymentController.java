@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.PaymentCreateDTO;
 import com.crm.crm_backend.dto.request.PaymentUpdateDTO;
 import com.crm.crm_backend.dto.response.PaymentResponseDTO;
@@ -22,45 +23,44 @@ public class PaymentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public ResponseEntity<PaymentResponseDTO> createPayment(
+    public ResponseEntity<ApiResponse<PaymentResponseDTO>> createPayment(
             @Valid @RequestBody PaymentCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(paymentService.createPayment(dto));
+                .body(ApiResponse.success("Payment created", paymentService.createPayment(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
-    public ResponseEntity<PaymentResponseDTO> getPayment(
+    public ResponseEntity<ApiResponse<PaymentResponseDTO>> getPayment(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(paymentService.getPayment(id));
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getPayment(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public ResponseEntity<Page<PaymentResponseDTO>> getAllPayments(
+    public ResponseEntity<ApiResponse<Page<PaymentResponseDTO>>> getAllPayments(
             Pageable pageable) {
 
-        return ResponseEntity.ok(paymentService.getAllPayments(pageable));
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getAllPayments(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public ResponseEntity<PaymentResponseDTO> updatePayment(
+    public ResponseEntity<ApiResponse<PaymentResponseDTO>> updatePayment(
             @PathVariable Long id,
             @Valid @RequestBody PaymentUpdateDTO dto) {
 
-        return ResponseEntity.ok(paymentService.updatePayment(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(paymentService.updatePayment(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deletePayment(
+    public ResponseEntity<ApiResponse<Void>> deletePayment(
             @PathVariable Long id) {
 
         paymentService.deletePayment(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Payment deleted", null));
     }
 }

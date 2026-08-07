@@ -63,8 +63,9 @@ class JwtProtectedApiIntegrationTest {
         mockMvc.perform(get("/api/leads/1")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.firstName").value("Ada"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.firstName").value("Ada"));
     }
 
     private String issueToken(String username, String role) {

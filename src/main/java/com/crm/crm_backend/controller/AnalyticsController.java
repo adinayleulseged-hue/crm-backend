@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.response.SalesForecastResponseDTO;
 import com.crm.crm_backend.service.analytics.AnalyticsService;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +17,8 @@ public class AnalyticsController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'FINANCE_OFFICER')")
-    public ResponseEntity<SalesForecastResponseDTO> getAnalytics() {
+    public ResponseEntity<ApiResponse<SalesForecastResponseDTO>> getAnalytics() {
 
-        return ResponseEntity.ok(
-                analyticsService.getAnalytics()
-        );
+        return ResponseEntity.ok(ApiResponse.success(analyticsService.getAnalytics()));
     }
 }

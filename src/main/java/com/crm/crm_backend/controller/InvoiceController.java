@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.InvoiceCreateDTO;
 import com.crm.crm_backend.dto.request.InvoiceUpdateDTO;
 import com.crm.crm_backend.dto.response.InvoiceResponseDTO;
@@ -22,46 +23,44 @@ public class InvoiceController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
-    public ResponseEntity<InvoiceResponseDTO> createInvoice(
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> createInvoice(
             @Valid @RequestBody InvoiceCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(invoiceService.createInvoice(dto));
+                .body(ApiResponse.success("Invoice created", invoiceService.createInvoice(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<InvoiceResponseDTO> getInvoice(
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> getInvoice(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(invoiceService.getInvoice(id));
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.getInvoice(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER', 'SALES_OFFICER')")
-    public ResponseEntity<Page<InvoiceResponseDTO>> getAllInvoices(
+    public ResponseEntity<ApiResponse<Page<InvoiceResponseDTO>>> getAllInvoices(
             Pageable pageable) {
 
-        return ResponseEntity.ok(invoiceService.getAllInvoices(pageable));
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.getAllInvoices(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public ResponseEntity<InvoiceResponseDTO> updateInvoice(
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> updateInvoice(
             @PathVariable Long id,
             @Valid @RequestBody InvoiceUpdateDTO dto) {
 
-        return ResponseEntity.ok(
-                invoiceService.updateInvoice(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.updateInvoice(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteInvoice(
+    public ResponseEntity<ApiResponse<Void>> deleteInvoice(
             @PathVariable Long id) {
 
         invoiceService.deleteInvoice(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Invoice deleted", null));
     }
 }

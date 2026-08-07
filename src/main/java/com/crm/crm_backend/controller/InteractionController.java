@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.InteractionCreateDTO;
 import com.crm.crm_backend.dto.request.InteractionUpdateDTO;
 import com.crm.crm_backend.dto.response.InteractionResponseDTO;
@@ -22,46 +23,44 @@ public class InteractionController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<InteractionResponseDTO> createInteraction(
+    public ResponseEntity<ApiResponse<InteractionResponseDTO>> createInteraction(
             @Valid @RequestBody InteractionCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(interactionService.createInteraction(dto));
+                .body(ApiResponse.success("Interaction created", interactionService.createInteraction(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<InteractionResponseDTO> getInteraction(
+    public ResponseEntity<ApiResponse<InteractionResponseDTO>> getInteraction(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(interactionService.getInteraction(id));
+        return ResponseEntity.ok(ApiResponse.success(interactionService.getInteraction(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<Page<InteractionResponseDTO>> getAllInteractions(
+    public ResponseEntity<ApiResponse<Page<InteractionResponseDTO>>> getAllInteractions(
             Pageable pageable) {
 
-        return ResponseEntity.ok(interactionService.getAllInteractions(pageable));
+        return ResponseEntity.ok(ApiResponse.success(interactionService.getAllInteractions(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<InteractionResponseDTO> updateInteraction(
+    public ResponseEntity<ApiResponse<InteractionResponseDTO>> updateInteraction(
             @PathVariable Long id,
             @Valid @RequestBody InteractionUpdateDTO dto) {
 
-        return ResponseEntity.ok(
-                interactionService.updateInteraction(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(interactionService.updateInteraction(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteInteraction(
+    public ResponseEntity<ApiResponse<Void>> deleteInteraction(
             @PathVariable Long id) {
 
         interactionService.deleteInteraction(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Interaction deleted", null));
     }
 }

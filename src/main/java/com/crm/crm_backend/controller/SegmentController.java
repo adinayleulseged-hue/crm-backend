@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.SegmentCreateDTO;
 import com.crm.crm_backend.dto.request.SegmentMemberRequestDTO;
 import com.crm.crm_backend.dto.request.SegmentUpdateDTO;
@@ -27,78 +28,79 @@ public class SegmentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SegmentResponseDTO> createSegment(
+    public ResponseEntity<ApiResponse<SegmentResponseDTO>> createSegment(
             @Valid @RequestBody SegmentCreateDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(segmentService.createSegment(dto));
+                .body(ApiResponse.success("Segment created", segmentService.createSegment(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<SegmentResponseDTO> getSegment(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<SegmentResponseDTO>> getSegment(@PathVariable Long id) {
 
-        return ResponseEntity.ok(segmentService.getSegment(id));
+        return ResponseEntity.ok(ApiResponse.success(segmentService.getSegment(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<Page<SegmentResponseDTO>> getAllSegments(Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<SegmentResponseDTO>>> getAllSegments(Pageable pageable) {
 
-        return ResponseEntity.ok(segmentService.getAllSegments(pageable));
+        return ResponseEntity.ok(ApiResponse.success(segmentService.getAllSegments(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SegmentResponseDTO> updateSegment(
+    public ResponseEntity<ApiResponse<SegmentResponseDTO>> updateSegment(
             @PathVariable Long id,
             @Valid @RequestBody SegmentUpdateDTO dto) {
 
-        return ResponseEntity.ok(segmentService.updateSegment(id, dto));
+        return ResponseEntity.ok(ApiResponse.success(segmentService.updateSegment(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteSegment(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteSegment(@PathVariable Long id) {
 
         segmentService.deleteSegment(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Segment deleted", null));
     }
 
     @GetMapping("/{id}/members")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<List<SegmentMemberResponseDTO>> listMembers(@PathVariable Long id) {
-        return ResponseEntity.ok(segmentService.listMembers(id));
+    public ResponseEntity<ApiResponse<List<SegmentMemberResponseDTO>>> listMembers(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(segmentService.listMembers(id)));
     }
 
     @PostMapping("/{id}/members")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SegmentMemberResponseDTO> addMember(
+    public ResponseEntity<ApiResponse<SegmentMemberResponseDTO>> addMember(
             @PathVariable Long id,
             @Valid @RequestBody SegmentMemberRequestDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(segmentService.addMember(id, dto.getCustomerId()));
+                .body(ApiResponse.success("Segment member added", segmentService.addMember(id, dto.getCustomerId())));
     }
 
     @DeleteMapping("/{id}/members/{customerId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<Void> removeMember(
+    public ResponseEntity<ApiResponse<Void>> removeMember(
             @PathVariable Long id,
             @PathVariable Long customerId) {
 
         segmentService.removeMember(id, customerId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Segment member deleted", null));
     }
 
     @PostMapping("/{id}/evaluate")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<Map<String, Object>> evaluateSegment(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> evaluateSegment(@PathVariable Long id) {
         int memberCount = segmentService.evaluateAndPopulate(id);
-        return ResponseEntity.ok(Map.of(
-                "segmentId", id,
-                "memberCount", memberCount
-        ));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Segment evaluated",
+                Map.of(
+                        "segmentId", id,
+                        "memberCount", memberCount
+                )));
     }
 }

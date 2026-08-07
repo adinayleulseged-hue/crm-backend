@@ -177,7 +177,7 @@ Exchange: `erp.events` (topic)
 | Area | Base path |
 |------|-----------|
 | Auth | `/api/auth` |
-| Customers | `/api/crm/customers` |
+| Customers | `/api/customers` (alias: `/api/crm/customers`) |
 | Leads | `/api/leads` |
 | Opportunities | `/api/opportunities` |
 | Sales orders | `/api/sales-orders` |
@@ -189,6 +189,22 @@ Exchange: `erp.events` (topic)
 | Segments | `/api/segments` |
 | Audit | `/api/audit-trails` |
 | Dashboard / Analytics / Reports | `/api/dashboard`, `/api/analytics`, `/api/reports` |
+
+### Response envelope
+
+All CRM endpoints return:
+
+```json
+{
+  "success": true,
+  "message": "optional human message",
+  "data": { },
+  "errors": null,
+  "timestamp": "2026-08-07T..."
+}
+```
+
+Frontend should read payload from `data` (including Spring `Page` objects for list endpoints). Errors from `CustomExceptionHandler` use the same shape with `success: false`.
 
 ### Campaign lifecycle
 

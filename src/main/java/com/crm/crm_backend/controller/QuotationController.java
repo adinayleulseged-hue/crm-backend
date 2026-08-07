@@ -1,5 +1,6 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.QuotationCreateDTO;
 import com.crm.crm_backend.dto.request.QuotationUpdateDTO;
 import com.crm.crm_backend.dto.response.QuotationResponseDTO;
@@ -24,70 +25,65 @@ public class QuotationController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<QuotationResponseDTO> createQuotation(
+    public ResponseEntity<ApiResponse<QuotationResponseDTO>> createQuotation(
             @Valid @RequestBody QuotationCreateDTO dto) {
 
-        return new ResponseEntity<>(
-                quotationService.createQuotation(dto),
-                HttpStatus.CREATED
-        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Quotation created", quotationService.createQuotation(dto)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<QuotationResponseDTO> getQuotation(
+    public ResponseEntity<ApiResponse<QuotationResponseDTO>> getQuotation(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                quotationService.getQuotation(id)
-        );
+        return ResponseEntity.ok(ApiResponse.success(quotationService.getQuotation(id)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
-    public ResponseEntity<Page<QuotationResponseDTO>> getAllQuotations(
+    public ResponseEntity<ApiResponse<Page<QuotationResponseDTO>>> getAllQuotations(
             Pageable pageable) {
 
-        return ResponseEntity.ok(
-                quotationService.getAllQuotations(pageable)
-        );
+        return ResponseEntity.ok(ApiResponse.success(quotationService.getAllQuotations(pageable)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<QuotationResponseDTO> updateQuotation(
+    public ResponseEntity<ApiResponse<QuotationResponseDTO>> updateQuotation(
             @PathVariable Long id,
             @Valid @RequestBody QuotationUpdateDTO dto) {
 
-        return ResponseEntity.ok(
-                quotationService.updateQuotation(id, dto)
-        );
+        return ResponseEntity.ok(ApiResponse.success(quotationService.updateQuotation(id, dto)));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<QuotationResponseDTO> changeStatus(
+    public ResponseEntity<ApiResponse<QuotationResponseDTO>> changeStatus(
             @PathVariable Long id,
             @RequestParam QuotationStatus status) {
 
-        return ResponseEntity.ok(quotationService.changeStatus(id, status));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Quotation status updated",
+                quotationService.changeStatus(id, status)));
     }
 
     @PatchMapping("/{id}/accept")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
-    public ResponseEntity<SalesOrderResponseDTO> acceptQuotation(
+    public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> acceptQuotation(
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(quotationService.acceptQuotation(id));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Quotation accepted",
+                quotationService.acceptQuotation(id)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteQuotation(
+    public ResponseEntity<ApiResponse<Void>> deleteQuotation(
             @PathVariable Long id) {
 
         quotationService.deleteQuotation(id);
-
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Quotation deleted", null));
     }
 }

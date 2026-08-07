@@ -1,11 +1,13 @@
 package com.crm.crm_backend.controller;
 
+import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.response.AuditTrailResponseDTO;
 import com.crm.crm_backend.model.enums.AuditAction;
 import com.crm.crm_backend.model.enums.AuditModule;
 import com.crm.crm_backend.service.core.AuditTrailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,43 +23,43 @@ public class AuditTrailController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public List<AuditTrailResponseDTO> getAllAuditTrails() {
-        return auditTrailService.getAllAuditTrails();
+    public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getAllAuditTrails() {
+        return ResponseEntity.ok(ApiResponse.success(auditTrailService.getAllAuditTrails()));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public AuditTrailResponseDTO getAuditTrailById(@PathVariable Long id) {
-        return auditTrailService.getAuditTrailById(id);
+    public ResponseEntity<ApiResponse<AuditTrailResponseDTO>> getAuditTrailById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(auditTrailService.getAuditTrailById(id)));
     }
 
     @GetMapping("/module/{module}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public List<AuditTrailResponseDTO> getByModule(
+    public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByModule(
             @PathVariable AuditModule module) {
 
-        return auditTrailService.getByModule(module);
+        return ResponseEntity.ok(ApiResponse.success(auditTrailService.getByModule(module)));
     }
 
     @GetMapping("/action/{action}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public List<AuditTrailResponseDTO> getByAction(
+    public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByAction(
             @PathVariable AuditAction action) {
 
-        return auditTrailService.getByAction(action);
+        return ResponseEntity.ok(ApiResponse.success(auditTrailService.getByAction(action)));
     }
 
     @GetMapping("/user/{performedBy}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public List<AuditTrailResponseDTO> getByPerformedBy(
+    public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByPerformedBy(
             @PathVariable String performedBy) {
 
-        return auditTrailService.getByPerformedBy(performedBy);
+        return ResponseEntity.ok(ApiResponse.success(auditTrailService.getByPerformedBy(performedBy)));
     }
 
     @GetMapping("/date-range")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE_OFFICER')")
-    public List<AuditTrailResponseDTO> getByDateRange(
+    public ResponseEntity<ApiResponse<List<AuditTrailResponseDTO>>> getByDateRange(
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime start,
@@ -66,6 +68,6 @@ public class AuditTrailController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime end) {
 
-        return auditTrailService.getByDateRange(start, end);
+        return ResponseEntity.ok(ApiResponse.success(auditTrailService.getByDateRange(start, end)));
     }
 }
