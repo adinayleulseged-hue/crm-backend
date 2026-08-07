@@ -13,8 +13,10 @@ import lombok.NoArgsConstructor;
 public class AuthResponseDTO {
 
     private String accessToken;
+    private String refreshToken;
     private String tokenType;
     private Long expiresInMs;
+    private Long refreshExpiresInMs;
     private String username;
     private UserRole role;
 }

@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -23,17 +24,22 @@ public class JwtTokenService {
     @Value("${auth.security.jwt.expiration-ms}")
     private long expirationMs;
 
+    @Value("${auth.security.jwt.refresh-expiration-ms:604800000}")
+    private long refreshExpirationMs;
+
     public String generateToken(AuthUser user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
         claims.put("userId", user.getId());
         claims.put("email", user.getEmail());
+        claims.put("jti", UUID.randomUUID().toString());
 
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .claims(claims)
+                .id(claims.get("jti").toString())
                 .subject(user.getUsername())
                 .issuedAt(now)
                 .expiration(expiry)
@@ -49,6 +55,20 @@ public class JwtTokenService {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
+    public String extractJti(String token) {
+        return extractClaim(token, claims -> {
+            String jti = claims.getId();
+            if (jti == null || jti.isBlank()) {
+                jti = claims.get("jti", String.class);
+            }
+            return jti;
+        });
+    }
+
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     public boolean isTokenValid(String token) {
         try {
             return !extractClaim(token, Claims::getExpiration).before(new Date());
@@ -59,6 +79,10 @@ public class JwtTokenService {
 
     public long getExpirationMs() {
         return expirationMs;
+    }
+
+    public long getRefreshExpirationMs() {
+        return refreshExpirationMs;
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> resolver) {

@@ -1,5 +1,6 @@
 package com.crm.auth.security;
 
+import com.crm.auth.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenService jwtTokenService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(
@@ -37,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
         try {
             if (jwtTokenService.isTokenValid(token)
+                    && !tokenBlacklistService.isBlacklisted(token)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
                 String username = jwtTokenService.extractUsername(token);
                 String role = jwtTokenService.extractRole(token);

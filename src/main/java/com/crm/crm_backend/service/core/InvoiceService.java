@@ -22,6 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.EnumSet;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -136,5 +140,40 @@ public class InvoiceService {
         invoiceRepository.delete(invoice);
 
         log.info("Invoice {} deleted", id);
+    }
+
+    /**
+     * Mark past-due SENT/PENDING invoices as OVERDUE and publish reminder events.
+     * Reminders are throttled by lastReminderSentAt (default once per day).
+     */
+    public int processOverdueAndReminders() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime reminderThreshold = LocalDateTime.now().minusHours(23);
+
+        List<Invoice> dueCandidates = invoiceRepository.findPastDueForOverdue(
+                today,
+                EnumSet.of(InvoiceStatus.SENT, InvoiceStatus.PENDING, InvoiceStatus.OVERDUE));
+
+        int reminded = 0;
+        for (Invoice invoice : dueCandidates) {
+            if (invoice.getStatus() == InvoiceStatus.SENT
+                    || invoice.getStatus() == InvoiceStatus.PENDING) {
+                DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.OVERDUE);
+                invoice.setStatus(InvoiceStatus.OVERDUE);
+                invoiceRepository.save(invoice);
+                log.info("Invoice {} marked OVERDUE (due {})", invoice.getInvoiceNumber(), invoice.getDueDate());
+            }
+
+            if (invoice.getLastReminderSentAt() == null
+                    || invoice.getLastReminderSentAt().isBefore(reminderThreshold)) {
+                invoiceEventPublisher.publishInvoiceOverdueReminder(invoice);
+                invoice.setLastReminderSentAt(LocalDateTime.now());
+                invoiceRepository.save(invoice);
+                reminded++;
+            }
+        }
+
+        log.info("Invoice reminder run complete: candidates={} reminded={}", dueCandidates.size(), reminded);
+        return reminded;
     }
 }

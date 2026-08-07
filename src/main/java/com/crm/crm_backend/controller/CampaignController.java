@@ -3,6 +3,8 @@ package com.crm.crm_backend.controller;
 import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.CampaignCreateDTO;
 import com.crm.crm_backend.dto.request.CampaignUpdateDTO;
+import com.crm.crm_backend.dto.response.CampaignMetricsResponseDTO;
+import com.crm.crm_backend.dto.response.CampaignMetricsSnapshotDTO;
 import com.crm.crm_backend.dto.response.CampaignResponseDTO;
 import com.crm.crm_backend.service.core.CampaignService;
 import jakarta.validation.Valid;
@@ -86,5 +88,21 @@ public class CampaignController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Campaign cancelled",
                 campaignService.cancelCampaign(id)));
+    }
+
+    @GetMapping("/{id}/metrics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<CampaignMetricsResponseDTO>> getCampaignMetrics(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(campaignService.getCampaignMetrics(id)));
+    }
+
+    @PostMapping("/{id}/metrics/snapshot")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    public ResponseEntity<ApiResponse<CampaignMetricsSnapshotDTO>> snapshotCampaignMetrics(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Campaign metrics snapshot saved",
+                campaignService.snapshotMetrics(id, "Manual snapshot")));
     }
 }

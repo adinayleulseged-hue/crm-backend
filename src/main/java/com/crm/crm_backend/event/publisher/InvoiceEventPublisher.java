@@ -43,4 +43,31 @@ public class InvoiceEventPublisher {
 
         log.info("Published event {} for invoice {}", CrmRoutingKeys.INVOICE_CREATED, invoice.getInvoiceNumber());
     }
+
+    public void publishInvoiceOverdueReminder(Invoice invoice) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("invoiceId", invoice.getId());
+        data.put("invoiceNumber", invoice.getInvoiceNumber());
+        data.put("customerId", invoice.getCustomer() != null ? invoice.getCustomer().getId() : null);
+        data.put("customerEmail", invoice.getCustomer() != null ? invoice.getCustomer().getEmail() : null);
+        data.put("dueDate", invoice.getDueDate() != null ? invoice.getDueDate().toString() : null);
+        data.put("balanceAmount", invoice.getBalanceAmount());
+        data.put("totalAmount", invoice.getTotalAmount());
+        data.put("status", invoice.getStatus() != null ? invoice.getStatus().name() : null);
+
+        DomainEventMessage message = DomainEventMessage.builder()
+                .eventName(CrmRoutingKeys.INVOICE_OVERDUE_REMINDER)
+                .source("crm-backend")
+                .occurredAt(LocalDateTime.now())
+                .data(data)
+                .build();
+
+        rabbitTemplate.convertAndSend(
+                CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE,
+                CrmRoutingKeys.INVOICE_OVERDUE_REMINDER,
+                message);
+
+        log.info("Published event {} for invoice {}",
+                CrmRoutingKeys.INVOICE_OVERDUE_REMINDER, invoice.getInvoiceNumber());
+    }
 }

@@ -2,14 +2,14 @@ package com.crm.crm_backend.service.analytics;
 
 import com.crm.crm_backend.dto.response.DashboardKpiResponseDTO;
 import com.crm.crm_backend.model.enums.CampaignStatus;
+import com.crm.crm_backend.model.enums.CustomerStatus;
+import com.crm.crm_backend.model.enums.InvoiceStatus;
 import com.crm.crm_backend.model.enums.LeadStatus;
 import com.crm.crm_backend.model.enums.OpportunityStage;
 import com.crm.crm_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -23,51 +23,40 @@ public class DashboardService {
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
     private final CampaignRepository campaignRepository;
+    private final ForecastingService forecastingService;
+    private final KpiCalculatorService kpiCalculatorService;
 
     public DashboardKpiResponseDTO getDashboardKpis() {
 
         DashboardKpiResponseDTO dto = new DashboardKpiResponseDTO();
 
-        dto.setTotalCustomers(customerRepository.count());
+        dto.setTotalCustomers(customerRepository.countByDeletedFalse());
+        dto.setActiveCustomers(
+                customerRepository.countByStatusAndDeletedFalse(CustomerStatus.ACTIVE));
 
         dto.setTotalLeads(leadRepository.count());
         dto.setNewLeads(leadRepository.countByStatus(LeadStatus.NEW));
-        dto.setQualifiedLeads(
-                leadRepository.countByStatus(LeadStatus.QUALIFIED));
-        dto.setConvertedLeads(
-                leadRepository.countByStatus(LeadStatus.CONVERTED));
+        dto.setQualifiedLeads(leadRepository.countByStatus(LeadStatus.QUALIFIED));
+        dto.setConvertedLeads(leadRepository.countByStatus(LeadStatus.CONVERTED));
 
         dto.setTotalOpportunities(opportunityRepository.count());
-
-        dto.setOpenOpportunities(
-                opportunityRepository.countByStage(OpportunityStage.NEW)
-                        + opportunityRepository.countByStage(OpportunityStage.NEEDS_ANALYSIS)
-                        + opportunityRepository.countByStage(OpportunityStage.QUALIFICATION)
-                        + opportunityRepository.countByStage(OpportunityStage.PROPOSAL)
-                        + opportunityRepository.countByStage(OpportunityStage.NEGOTIATION)
-        );
-
-        dto.setWonOpportunities(
-                opportunityRepository.countByStage(OpportunityStage.CLOSED_WON));
-
-        dto.setLostOpportunities(
-                opportunityRepository.countByStage(OpportunityStage.CLOSED_LOST));
+        dto.setOpenOpportunities(forecastingService.countOpenOpportunities());
+        dto.setWonOpportunities(opportunityRepository.countByStage(OpportunityStage.CLOSED_WON));
+        dto.setLostOpportunities(opportunityRepository.countByStage(OpportunityStage.CLOSED_LOST));
+        dto.setPipelineValue(forecastingService.weightedOpenPipeline());
 
         dto.setTotalSalesOrders(salesOrderRepository.count());
 
         dto.setTotalInvoices(invoiceRepository.count());
+        dto.setOverdueInvoices(invoiceRepository.countByStatus(InvoiceStatus.OVERDUE));
+        dto.setOpenInvoiceBalance(kpiCalculatorService.coalesce(invoiceRepository.sumOpenBalanceAmount()));
         dto.setTotalPayments(paymentRepository.count());
 
-        BigDecimal paymentRevenue = paymentRepository.sumCompletedAmount();
-        BigDecimal invoicePaid = invoiceRepository.sumPaidAmountExcludingCancelled();
-        dto.setTotalRevenue(paymentRevenue != null && paymentRevenue.compareTo(BigDecimal.ZERO) > 0
-                ? paymentRevenue
-                : (invoicePaid != null ? invoicePaid : BigDecimal.ZERO));
+        dto.setTotalRevenue(forecastingService.currentRevenue());
+        dto.setProjectedRevenue(forecastingService.projectedRevenue());
 
         dto.setTotalCampaigns(campaignRepository.count());
-
-        dto.setActiveCampaigns(
-                campaignRepository.countByStatus(CampaignStatus.ACTIVE));
+        dto.setActiveCampaigns(campaignRepository.countByStatus(CampaignStatus.ACTIVE));
 
         return dto;
     }

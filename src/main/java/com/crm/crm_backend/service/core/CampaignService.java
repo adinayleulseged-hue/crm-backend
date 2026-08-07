@@ -2,11 +2,15 @@ package com.crm.crm_backend.service.core;
 
 import com.crm.crm_backend.dto.request.CampaignCreateDTO;
 import com.crm.crm_backend.dto.request.CampaignUpdateDTO;
+import com.crm.crm_backend.dto.response.CampaignMetricsResponseDTO;
+import com.crm.crm_backend.dto.response.CampaignMetricsSnapshotDTO;
 import com.crm.crm_backend.dto.response.CampaignResponseDTO;
 import com.crm.crm_backend.exception.CampaignExecutionException;
 import com.crm.crm_backend.mapper.CampaignMapper;
 import com.crm.crm_backend.model.entity.Campaign;
+import com.crm.crm_backend.model.entity.CampaignMetrics;
 import com.crm.crm_backend.model.enums.CampaignStatus;
+import com.crm.crm_backend.repository.CampaignMetricsRepository;
 import com.crm.crm_backend.repository.CampaignRepository;
 import com.crm.crm_backend.service.workflow.DomainStatusGuard;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,6 +33,7 @@ import java.util.List;
 public class CampaignService {
 
     private final CampaignRepository campaignRepository;
+    private final CampaignMetricsRepository campaignMetricsRepository;
     private final CampaignMapper campaignMapper;
 
     public CampaignResponseDTO createCampaign(CampaignCreateDTO dto) {
@@ -68,7 +75,9 @@ public class CampaignService {
     }
 
     public CampaignResponseDTO completeCampaign(Long id) {
-        return transition(id, CampaignStatus.COMPLETED);
+        CampaignResponseDTO response = transition(id, CampaignStatus.COMPLETED);
+        snapshotMetrics(id, "Completed campaign snapshot");
+        return response;
     }
 
     public CampaignResponseDTO cancelCampaign(Long id) {
@@ -152,9 +161,70 @@ public class CampaignService {
                 DomainStatusGuard.assertCampaignTransition(campaign.getStatus(), CampaignStatus.COMPLETED);
                 campaign.setStatus(CampaignStatus.COMPLETED);
                 campaignRepository.save(campaign);
+                snapshotMetrics(campaign.getId(), "Scheduler completed campaign snapshot");
                 log.info("Scheduler completed campaign {}", campaign.getId());
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public CampaignMetricsResponseDTO getCampaignMetrics(Long campaignId) {
+        Campaign campaign = requireCampaign(campaignId);
+        List<CampaignMetrics> snapshots =
+                campaignMetricsRepository.findByCampaignIdOrderByRecordedAtDesc(campaignId);
+
+        Integer expectedLeads = campaign.getExpectedLeads();
+        Integer actualLeads = campaign.getActualLeads() != null ? campaign.getActualLeads() : 0;
+        BigDecimal expectedRevenue = campaign.getExpectedRevenue() != null
+                ? campaign.getExpectedRevenue() : BigDecimal.ZERO;
+        BigDecimal actualRevenue = campaign.getActualRevenue() != null
+                ? campaign.getActualRevenue() : BigDecimal.ZERO;
+
+        Double leadRate = null;
+        if (expectedLeads != null && expectedLeads > 0) {
+            leadRate = (actualLeads * 100.0) / expectedLeads;
+        }
+        Double revenueRate = null;
+        if (expectedRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            revenueRate = actualRevenue
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(expectedRevenue, 2, RoundingMode.HALF_UP)
+                    .doubleValue();
+        }
+
+        return CampaignMetricsResponseDTO.builder()
+                .campaignId(campaign.getId())
+                .campaignNumber(campaign.getCampaignNumber())
+                .campaignName(campaign.getCampaignName())
+                .status(campaign.getStatus() != null ? campaign.getStatus().name() : null)
+                .budget(campaign.getBudget())
+                .expectedRevenue(expectedRevenue)
+                .actualRevenue(actualRevenue)
+                .expectedLeads(expectedLeads)
+                .actualLeads(actualLeads)
+                .leadAchievementRate(leadRate)
+                .revenueAchievementRate(revenueRate)
+                .latestSnapshotAt(snapshots.isEmpty() ? null : snapshots.getFirst().getRecordedAt())
+                .snapshots(snapshots.stream().map(this::toSnapshotDto).toList())
+                .build();
+    }
+
+    public CampaignMetricsSnapshotDTO snapshotMetrics(Long campaignId, String notes) {
+        Campaign campaign = requireCampaign(campaignId);
+        CampaignMetrics metrics = CampaignMetrics.builder()
+                .campaign(campaign)
+                .recordedAt(LocalDateTime.now())
+                .statusSnapshot(campaign.getStatus() != null ? campaign.getStatus().name() : null)
+                .budget(campaign.getBudget())
+                .expectedRevenue(campaign.getExpectedRevenue())
+                .actualRevenue(campaign.getActualRevenue())
+                .expectedLeads(campaign.getExpectedLeads())
+                .actualLeads(campaign.getActualLeads())
+                .notes(notes)
+                .build();
+        CampaignMetrics saved = campaignMetricsRepository.save(metrics);
+        log.info("Campaign {} metrics snapshot {}", campaignId, saved.getId());
+        return toSnapshotDto(saved);
     }
 
     public void deleteCampaign(Long id) {
@@ -182,5 +252,19 @@ public class CampaignService {
     private Campaign requireCampaign(Long id) {
         return campaignRepository.findById(id)
                 .orElseThrow(() -> new CampaignExecutionException("Campaign not found: " + id));
+    }
+
+    private CampaignMetricsSnapshotDTO toSnapshotDto(CampaignMetrics metrics) {
+        return CampaignMetricsSnapshotDTO.builder()
+                .id(metrics.getId())
+                .recordedAt(metrics.getRecordedAt())
+                .statusSnapshot(metrics.getStatusSnapshot())
+                .budget(metrics.getBudget())
+                .expectedRevenue(metrics.getExpectedRevenue())
+                .actualRevenue(metrics.getActualRevenue())
+                .expectedLeads(metrics.getExpectedLeads())
+                .actualLeads(metrics.getActualLeads())
+                .notes(metrics.getNotes())
+                .build();
     }
 }

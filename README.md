@@ -69,11 +69,16 @@ Clients should call the **gateway** at **http://localhost:8080**.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/auth/login` | Get access token |
-| POST | `/api/auth/register` | Register a user |
+| POST | `/api/auth/login` | Access + refresh tokens |
+| POST | `/api/auth/register` | Register a user (same token pair) |
+| POST | `/api/auth/refresh` | Rotate refresh token; issue new access token |
+| POST | `/api/auth/logout` | Blacklist access `jti` + revoke refresh tokens |
+| GET | `/api/auth/me` | Current user profile (JWT required) |
+
+Defaults: access token **15 minutes** (`JWT_EXPIRATION_MS`), refresh token **7 days** (`JWT_REFRESH_EXPIRATION_MS`).
 
 CRM no longer owns users (`crm_users` dropped in Flyway `V2__drop_crm_users.sql`).  
-CRM validates JWTs from Auth Service claims only.
+CRM validates JWTs from Auth Service claims only (signature + expiry). Auth-service additionally rejects blacklisted access tokens on `/me` and other protected auth routes.
 
 ### Seeded users (Auth Service)
 
@@ -95,6 +100,8 @@ Content-Type: application/json
   "password": "admin123"
 }
 ```
+
+Response `data` includes `accessToken`, `refreshToken`, `expiresInMs`, `refreshExpiresInMs`.
 
 Use `Authorization: Bearer <accessToken>` on CRM routes (see `test.http`).
 
@@ -157,6 +164,8 @@ CORS uses explicit origins (SecurityConfig / gateway / auth) — controllers no 
 |---------------|--------|
 | `POST /api/auth/login` | Public |
 | `POST /api/auth/register` | Public for `EMPLOYEE` / `SALES_OFFICER` / `FINANCE_OFFICER` only; elevated roles need ADMIN JWT |
+| `POST /api/auth/refresh` | Public (valid refresh token required in body) |
+| `POST /api/auth/logout` | Public (accepts Bearer access and/or refresh token body) |
 | `GET /api/auth/me` | JWT required |
 
 Gateway JWT defaults **on** (`GATEWAY_JWT_ENABLED=true`). Set `INTEGRATION_ALLOW_FALLBACK=false` in production so MMS/FMS do not fake success.
@@ -169,6 +178,7 @@ Exchange: `erp.events` (topic)
 |-------------|---------|
 | `sales.order.confirmed` | `PATCH /api/sales-orders/{id}/confirm` |
 | `invoice.created` | Create invoice |
+| `invoice.overdue.reminder` | Nightly/daily overdue invoice reminder scheduler |
 | `payment.received` | Create payment |
 | `lead.created` / `lead.qualified` / `lead.converted` | Lead lifecycle |
 
@@ -184,6 +194,8 @@ Exchange: `erp.events` (topic)
 | Invoices | `/api/invoices` |
 | Payments | `/api/payments` |
 | Quotations | `/api/quotations` |
+| Pricing | `/api/pricing` |
+| Territories | `/api/territories` |
 | Campaigns | `/api/campaigns` |
 | Interactions | `/api/interactions` |
 | Segments | `/api/segments` |
@@ -205,6 +217,17 @@ All CRM endpoints return:
 ```
 
 Frontend should read payload from `data` (including Spring `Page` objects for list endpoints). Errors from `CustomExceptionHandler` use the same shape with `success: false`.
+
+### Pricing / territories / campaign metrics
+
+- `POST /api/pricing/rules` — create discount/markup rules; `POST /api/pricing/apply` evaluates the best active rule
+- `CRUD /api/territories` (+ `GET /api/territories/active`)
+- `GET /api/campaigns/{id}/metrics` — live achievement rates + historical snapshots; auto-snapshot on complete
+
+### Invoice reminders & KPIs
+
+- `InvoiceReminderScheduler` marks past-due `SENT`/`PENDING` invoices as `OVERDUE` and publishes `invoice.overdue.reminder` (throttled ~daily)
+- Dashboard / analytics / reports expose real `activeCustomers`, overdue counts, open invoice balance, weighted pipeline, and projected revenue (payments + open balances + probability-weighted opportunities)
 
 ### Campaign lifecycle
 

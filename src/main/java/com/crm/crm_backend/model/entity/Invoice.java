@@ -66,6 +66,9 @@ public class Invoice {
     @Column(length = 2000)
     private String notes;
 
+    @Column(name = "last_reminder_sent_at")
+    private LocalDateTime lastReminderSentAt;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

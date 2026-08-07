@@ -38,7 +38,7 @@
 
 ### ------------------------------------------------------------
 ### 0) Auth — get JWT (Auth Service via Gateway)
-### Expected: 200, body.accessToken
+### Expected: 200, data.accessToken + data.refreshToken
 ### ------------------------------------------------------------
 # @name login
 POST {{baseUrl}}/api/auth/login
@@ -47,6 +47,24 @@ Content-Type: application/json
 {
   "username": "admin",
   "password": "admin123"
+}
+
+### Refresh access token
+# @name refresh
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.data.refreshToken}}"
+}
+
+### Logout (blacklist access jti + revoke refresh)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.data.refreshToken}}"
 }
 
 ### Copy accessToken from login into @token above, or use:
