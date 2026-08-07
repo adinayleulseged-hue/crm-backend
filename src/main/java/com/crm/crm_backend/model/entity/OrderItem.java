@@ -21,6 +21,9 @@ public class OrderItem {
 
     private String itemName;
 
+    @Column(length = 100)
+    private String sku;
+
     @Column(length = 1000)
     private String description;
 

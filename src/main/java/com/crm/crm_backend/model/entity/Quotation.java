@@ -8,6 +8,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "quotations")
@@ -62,6 +64,14 @@ public class Quotation {
     private String notes;
 
     private Boolean active;
+
+    @OneToMany(
+            mappedBy = "quotation",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @Builder.Default
+    private List<QuotationItem> items = new ArrayList<>();
 
     private LocalDateTime createdAt;
 

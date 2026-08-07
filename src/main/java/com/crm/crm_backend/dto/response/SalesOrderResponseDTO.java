@@ -21,6 +21,8 @@ public class SalesOrderResponseDTO {
 
     private Long opportunityId;
 
+    private Long quotationId;
+
     private OrderStatus status;
 
     private OrderType type;

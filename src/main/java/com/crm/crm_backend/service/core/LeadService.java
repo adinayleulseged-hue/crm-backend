@@ -4,16 +4,22 @@ import com.crm.crm_backend.dto.request.CustomerCreateDTO;
 import com.crm.crm_backend.dto.request.LeadConvertDTO;
 import com.crm.crm_backend.dto.request.LeadCreateDTO;
 import com.crm.crm_backend.dto.request.LeadUpdateDTO;
+import com.crm.crm_backend.dto.request.OpportunityCreateDTO;
 import com.crm.crm_backend.dto.response.CustomerResponseDTO;
 import com.crm.crm_backend.dto.response.LeadResponseDTO;
+import com.crm.crm_backend.dto.response.OpportunityResponseDTO;
 import com.crm.crm_backend.event.publisher.LeadEventPublisher;
 import com.crm.crm_backend.exception.LeadConversionException;
 import com.crm.crm_backend.exception.LeadNotFoundException;
 import com.crm.crm_backend.mapper.LeadMapper;
+import com.crm.crm_backend.model.entity.Customer;
 import com.crm.crm_backend.model.entity.Lead;
 import com.crm.crm_backend.model.enums.CustomerType;
 import com.crm.crm_backend.model.enums.LeadStatus;
+import com.crm.crm_backend.model.enums.OpportunityType;
+import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.LeadRepository;
+import com.crm.crm_backend.service.workflow.DomainStatusGuard;
 import com.crm.crm_backend.util.calculator.LeadScoreCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -32,6 +39,8 @@ public class LeadService {
     private final LeadRepository leadRepository;
     private final LeadMapper leadMapper;
     private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
+    private final OpportunityService opportunityService;
     private final LeadScoreCalculator leadScoreCalculator;
     private final LeadEventPublisher leadEventPublisher;
 
@@ -107,6 +116,10 @@ public class LeadService {
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
 
+        if (lead.getStatus() == LeadStatus.CONVERTED) {
+            throw new IllegalStateException("Cannot delete a converted lead");
+        }
+
         leadRepository.delete(lead);
 
         log.info("Lead deleted {}", id);
@@ -120,6 +133,8 @@ public class LeadService {
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
+
+        DomainStatusGuard.assertLeadTransition(lead.getStatus(), newStatus);
 
         lead.setStatus(newStatus);
 
@@ -145,8 +160,13 @@ public class LeadService {
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
 
-        if (lead.getStatus() != LeadStatus.QUALIFIED) {
+        if (lead.getStatus() == LeadStatus.CONVERTED) {
+            throw new LeadConversionException("Lead is already converted.");
+        }
 
+        DomainStatusGuard.assertLeadTransition(lead.getStatus(), LeadStatus.CONVERTED);
+
+        if (lead.getStatus() != LeadStatus.QUALIFIED) {
             throw new LeadConversionException(
                     "Lead must be QUALIFIED before conversion.");
         }
@@ -154,31 +174,45 @@ public class LeadService {
         CustomerCreateDTO customerDTO =
                 buildCustomerFromLead(lead);
 
-        CustomerResponseDTO customer =
+        CustomerResponseDTO customerDto =
                 customerService.createCustomer(customerDTO);
 
+        Customer customer = customerRepository.findById(customerDto.getId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Created customer not found: " + customerDto.getId()));
+
+        lead.setConvertedCustomer(customer);
         lead.setStatus(LeadStatus.CONVERTED);
-
         lead.setConvertedAt(LocalDateTime.now());
+        lead.setConversionReason(dto.getConversionReason());
 
-        lead.setConversionReason(
-                dto.getConversionReason());
+        if (dto.isCreateOpportunity()) {
+            OpportunityCreateDTO opportunityCreateDTO = new OpportunityCreateDTO();
+            opportunityCreateDTO.setLeadId(lead.getId());
+            opportunityCreateDTO.setCustomerId(customer.getId());
+            opportunityCreateDTO.setOpportunityName(
+                    dto.getOpportunityTitle() != null && !dto.getOpportunityTitle().isBlank()
+                            ? dto.getOpportunityTitle()
+                            : "Opportunity from lead " + lead.getId());
+            opportunityCreateDTO.setType(OpportunityType.NEW_BUSINESS);
+            opportunityCreateDTO.setExpectedRevenue(
+                    dto.getOpportunityValue() != null
+                            ? BigDecimal.valueOf(dto.getOpportunityValue())
+                            : lead.getBudget());
+            opportunityCreateDTO.setProbability(50);
+            opportunityCreateDTO.setDescription("Auto-created during lead conversion");
 
-        /*
-         * If CustomerResponseDTO contains getId(),
-         * load the Customer entity and set:
-         *
-         * lead.setConvertedCustomer(customerEntity);
-         *
-         * Otherwise leave this until CustomerService
-         * returns the entity.
-         */
+            OpportunityResponseDTO opportunity =
+                    opportunityService.createOpportunity(opportunityCreateDTO);
+            lead.setConvertedOpportunityId(opportunity.getId());
+        }
 
         Lead converted = leadRepository.save(lead);
 
         leadEventPublisher.publishLeadConverted(converted);
 
-        log.info("Lead {} converted.", id);
+        log.info("Lead {} converted to customer {} (opportunityId={})",
+                id, customer.getId(), lead.getConvertedOpportunityId());
 
         return leadMapper.toResponseDTO(converted);
     }
@@ -208,5 +242,4 @@ public class LeadService {
 
         return dto;
     }
-
 }

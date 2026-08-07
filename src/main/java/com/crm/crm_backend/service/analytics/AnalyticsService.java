@@ -1,6 +1,5 @@
 package com.crm.crm_backend.service.analytics;
 
-
 import com.crm.crm_backend.dto.response.SalesForecastResponseDTO;
 import com.crm.crm_backend.model.enums.CampaignStatus;
 import com.crm.crm_backend.model.enums.LeadStatus;
@@ -30,11 +29,18 @@ public class AnalyticsService {
         SalesForecastResponseDTO dto =
                 new SalesForecastResponseDTO();
 
-        // Revenue (placeholder until revenue calculations are added)
-        dto.setCurrentRevenue(BigDecimal.ZERO);
-        dto.setProjectedRevenue(BigDecimal.ZERO);
+        BigDecimal currentRevenue = paymentRepository.sumCompletedAmount();
+        if (currentRevenue == null) {
+            currentRevenue = BigDecimal.ZERO;
+        }
+        dto.setCurrentRevenue(currentRevenue);
 
-        // Leads
+        BigDecimal projected = invoiceRepository.sumTotalAmountExcludingCancelled();
+        if (projected == null) {
+            projected = BigDecimal.ZERO;
+        }
+        dto.setProjectedRevenue(projected);
+
         long totalLeads = leadRepository.count();
         long convertedLeads =
                 leadRepository.countByStatus(LeadStatus.CONVERTED);
@@ -49,7 +55,6 @@ public class AnalyticsService {
             dto.setLeadConversionRate(0.0);
         }
 
-        // Opportunities
         long totalOpp = opportunityRepository.count();
         long wonOpp =
                 opportunityRepository.countByStage(
@@ -65,14 +70,11 @@ public class AnalyticsService {
             dto.setOpportunityWinRate(0.0);
         }
 
-        // Sales
         dto.setTotalSalesOrders(salesOrderRepository.count());
 
-        // Finance
         dto.setTotalInvoices(invoiceRepository.count());
         dto.setTotalPayments(paymentRepository.count());
 
-        // Marketing
         dto.setTotalCampaigns(campaignRepository.count());
         dto.setActiveCampaigns(
                 campaignRepository.countByStatus(

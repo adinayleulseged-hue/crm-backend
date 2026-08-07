@@ -13,6 +13,7 @@ import com.crm.crm_backend.model.enums.OpportunityStage;
 import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.LeadRepository;
 import com.crm.crm_backend.repository.OpportunityRepository;
+import com.crm.crm_backend.service.workflow.DomainStatusGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -109,7 +110,13 @@ public class OpportunityService {
                         new OpportunityNotFoundException(
                                 "Opportunity not found : " + id));
 
+        DomainStatusGuard.assertOpportunityTransition(opportunity.getStage(), stage);
+
         opportunity.setStage(stage);
+
+        if (stage == OpportunityStage.CLOSED_WON || stage == OpportunityStage.CLOSED_LOST) {
+            opportunity.setActualCloseDate(java.time.LocalDate.now());
+        }
 
         Opportunity updated = opportunityRepository.save(opportunity);
 

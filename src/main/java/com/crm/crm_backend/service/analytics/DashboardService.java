@@ -28,10 +28,8 @@ public class DashboardService {
 
         DashboardKpiResponseDTO dto = new DashboardKpiResponseDTO();
 
-        // Customers
         dto.setTotalCustomers(customerRepository.count());
 
-        // Leads
         dto.setTotalLeads(leadRepository.count());
         dto.setNewLeads(leadRepository.countByStatus(LeadStatus.NEW));
         dto.setQualifiedLeads(
@@ -39,7 +37,6 @@ public class DashboardService {
         dto.setConvertedLeads(
                 leadRepository.countByStatus(LeadStatus.CONVERTED));
 
-        // Opportunities
         dto.setTotalOpportunities(opportunityRepository.count());
 
         dto.setOpenOpportunities(
@@ -56,20 +53,17 @@ public class DashboardService {
         dto.setLostOpportunities(
                 opportunityRepository.countByStage(OpportunityStage.CLOSED_LOST));
 
-        // Sales
         dto.setTotalSalesOrders(salesOrderRepository.count());
 
-        // Finance
         dto.setTotalInvoices(invoiceRepository.count());
         dto.setTotalPayments(paymentRepository.count());
 
-        /*
-         * Replace this later with SUM(invoice.totalAmount)
-         * or SUM(payment.amount).
-         */
-        dto.setTotalRevenue(BigDecimal.ZERO);
+        BigDecimal paymentRevenue = paymentRepository.sumCompletedAmount();
+        BigDecimal invoicePaid = invoiceRepository.sumPaidAmountExcludingCancelled();
+        dto.setTotalRevenue(paymentRevenue != null && paymentRevenue.compareTo(BigDecimal.ZERO) > 0
+                ? paymentRevenue
+                : (invoicePaid != null ? invoicePaid : BigDecimal.ZERO));
 
-        // Campaigns
         dto.setTotalCampaigns(campaignRepository.count());
 
         dto.setActiveCampaigns(
@@ -78,4 +72,3 @@ public class DashboardService {
         return dto;
     }
 }
-

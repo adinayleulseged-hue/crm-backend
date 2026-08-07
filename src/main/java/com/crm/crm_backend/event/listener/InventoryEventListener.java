@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -26,21 +27,43 @@ public class InventoryEventListener {
             return;
         }
 
-        String sku = stringVal(data.getOrDefault("sku", data.get("productSku")));
         String orderReference = stringVal(data.getOrDefault("orderNumber", data.get("salesOrderId")));
-        BigDecimal quantity = decimalVal(data.getOrDefault("quantity", BigDecimal.ONE));
 
-        if (sku != null) {
-            mmsIntegrationService.getStock(sku)
-                    .ifPresent(stock -> log.info("MMS stock sku={} available={}",
-                            stock.getSku(), stock.getAvailableQuantity()));
-
-            boolean reserved = mmsIntegrationService.reserveForOrder(
-                    sku,
-                    quantity == null ? BigDecimal.ONE : quantity,
-                    orderReference == null ? "UNKNOWN" : orderReference);
-            log.info("MMS reserve result sku={} reserved={}", sku, reserved);
+        Object itemsObj = data.get("items");
+        if (itemsObj instanceof List<?> items && !items.isEmpty()) {
+            for (Object raw : items) {
+                if (raw instanceof Map<?, ?> line) {
+                    reserveLine(line, orderReference);
+                }
+            }
+            return;
         }
+
+        String sku = stringVal(data.getOrDefault("sku", data.get("productSku")));
+        BigDecimal quantity = decimalVal(data.getOrDefault("quantity", BigDecimal.ONE));
+        reserveSku(sku, quantity, orderReference);
+    }
+
+    private void reserveLine(Map<?, ?> line, String orderReference) {
+        String sku = stringVal(line.get("sku"));
+        BigDecimal quantity = decimalVal(line.get("quantity"));
+        reserveSku(sku, quantity, orderReference);
+    }
+
+    private void reserveSku(String sku, BigDecimal quantity, String orderReference) {
+        if (sku == null) {
+            return;
+        }
+
+        mmsIntegrationService.getStock(sku)
+                .ifPresent(stock -> log.info("MMS stock sku={} available={}",
+                        stock.getSku(), stock.getAvailableQuantity()));
+
+        boolean reserved = mmsIntegrationService.reserveForOrder(
+                sku,
+                quantity == null ? BigDecimal.ONE : quantity,
+                orderReference == null ? "UNKNOWN" : orderReference);
+        log.info("MMS reserve result sku={} reserved={}", sku, reserved);
     }
 
     private String stringVal(Object value) {

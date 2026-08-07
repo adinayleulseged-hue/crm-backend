@@ -12,6 +12,8 @@ public class OrderItemResponseDTO {
 
     private String itemName;
 
+    private String sku;
+
     private String description;
 
     private Integer quantity;

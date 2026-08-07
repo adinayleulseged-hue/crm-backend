@@ -1,8 +1,8 @@
 package com.crm.crm_backend.service.analytics;
 
-
 import com.crm.crm_backend.dto.response.ReportResponseDTO;
 import com.crm.crm_backend.model.enums.CampaignStatus;
+import com.crm.crm_backend.model.enums.InvoiceStatus;
 import com.crm.crm_backend.model.enums.LeadStatus;
 import com.crm.crm_backend.model.enums.OpportunityStage;
 import com.crm.crm_backend.repository.*;
@@ -29,41 +29,31 @@ public class ReportService {
 
         ReportResponseDTO dto = new ReportResponseDTO();
 
-        // Customers
         dto.setTotalCustomers(customerRepository.count());
-
-        // If you have CustomerStatus.ACTIVE, replace this with countByStatus(...)
         dto.setActiveCustomers(customerRepository.count());
 
-        // Leads
         dto.setTotalLeads(leadRepository.count());
         dto.setQualifiedLeads(
                 leadRepository.countByStatus(LeadStatus.QUALIFIED));
         dto.setConvertedLeads(
                 leadRepository.countByStatus(LeadStatus.CONVERTED));
 
-        // Opportunities
         dto.setTotalOpportunities(opportunityRepository.count());
         dto.setWonOpportunities(
                 opportunityRepository.countByStage(OpportunityStage.CLOSED_WON));
         dto.setLostOpportunities(
                 opportunityRepository.countByStage(OpportunityStage.CLOSED_LOST));
 
-        // Sales
         dto.setTotalSalesOrders(salesOrderRepository.count());
 
-        // Finance
         dto.setTotalInvoices(invoiceRepository.count());
-
-        // Replace later with actual paid invoice count
-        dto.setPaidInvoices(invoiceRepository.count());
+        dto.setPaidInvoices(invoiceRepository.countByStatus(InvoiceStatus.PAID));
 
         dto.setTotalPayments(paymentRepository.count());
 
-        // Replace later with SUM(invoice.totalAmount)
-        dto.setTotalRevenue(BigDecimal.ZERO);
+        BigDecimal revenue = paymentRepository.sumCompletedAmount();
+        dto.setTotalRevenue(revenue != null ? revenue : BigDecimal.ZERO);
 
-        // Campaigns
         dto.setTotalCampaigns(campaignRepository.count());
         dto.setActiveCampaigns(
                 campaignRepository.countByStatus(CampaignStatus.ACTIVE));

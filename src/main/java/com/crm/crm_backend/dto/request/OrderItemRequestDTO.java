@@ -10,6 +10,8 @@ public class OrderItemRequestDTO {
 
     private String itemName;
 
+    private String sku;
+
     private String description;
 
     private Integer quantity;

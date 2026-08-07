@@ -1,6 +1,5 @@
 package com.crm.crm_backend.service.core;
 
-
 import com.crm.crm_backend.dto.request.InvoiceCreateDTO;
 import com.crm.crm_backend.dto.request.InvoiceUpdateDTO;
 import com.crm.crm_backend.dto.response.InvoiceResponseDTO;
@@ -13,6 +12,8 @@ import com.crm.crm_backend.model.enums.InvoiceStatus;
 import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.InvoiceRepository;
 import com.crm.crm_backend.repository.SalesOrderRepository;
+import com.crm.crm_backend.service.workflow.DomainStatusGuard;
+import com.crm.crm_backend.validator.InvoiceValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,11 +34,14 @@ public class InvoiceService {
     private final CustomerRepository customerRepository;
     private final InvoiceMapper invoiceMapper;
     private final InvoiceEventPublisher invoiceEventPublisher;
+    private final InvoiceValidator invoiceValidator;
 
     public InvoiceResponseDTO createInvoice(InvoiceCreateDTO dto) {
 
         SalesOrder order = salesOrderRepository.findById(dto.getSalesOrderId())
                 .orElseThrow(() -> new RuntimeException("Sales Order not found"));
+
+        invoiceValidator.validateCanCreateFromOrder(order);
 
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
@@ -94,6 +98,12 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
+        invoiceValidator.validateNotCancelled(invoice);
+
+        if (dto.getStatus() != null) {
+            DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), dto.getStatus());
+        }
+
         invoiceMapper.updateEntityFromDTO(dto, invoice);
 
         if (invoice.getPaidAmount() == null) {
@@ -103,7 +113,9 @@ public class InvoiceService {
         invoice.setBalanceAmount(
                 invoice.getTotalAmount().subtract(invoice.getPaidAmount()));
 
-        if (invoice.getBalanceAmount().compareTo(BigDecimal.ZERO) == 0) {
+        if (invoice.getBalanceAmount().compareTo(BigDecimal.ZERO) == 0
+                && invoice.getStatus() != InvoiceStatus.CANCELLED) {
+            DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.PAID);
             invoice.setStatus(InvoiceStatus.PAID);
         }
 
@@ -117,9 +129,12 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            throw new IllegalStateException("Cannot delete a paid invoice");
+        }
+
         invoiceRepository.delete(invoice);
 
         log.info("Invoice {} deleted", id);
     }
-
 }

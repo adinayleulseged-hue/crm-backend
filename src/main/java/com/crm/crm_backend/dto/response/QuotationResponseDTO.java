@@ -7,6 +7,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class QuotationResponseDTO {
@@ -36,6 +37,10 @@ public class QuotationResponseDTO {
     private String notes;
 
     private Boolean active;
+
+    private Long salesOrderId;
+
+    private List<QuotationItemResponseDTO> items;
 
     private LocalDateTime createdAt;
 

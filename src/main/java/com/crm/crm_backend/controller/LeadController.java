@@ -65,6 +65,15 @@ public class LeadController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    public ResponseEntity<LeadResponseDTO> updateLeadStatus(
+            @PathVariable Long id,
+            @RequestParam com.crm.crm_backend.model.enums.LeadStatus status) {
+
+        return ResponseEntity.ok(leadService.updateLeadStatus(id, status));
+    }
+
     @PatchMapping("/{id}/convert")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<LeadResponseDTO> convertLead(

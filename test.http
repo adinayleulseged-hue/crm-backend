@@ -22,7 +22,15 @@ Content-Type: application/json
 GET http://localhost:8080/api/crm/customers
 Authorization: Bearer TOKEN
 
-### Confirm sales order (publishes sales.order.confirmed)
+### Accept quotation (creates linked sales order)
+PATCH http://localhost:8080/api/quotations/1/accept
+Authorization: Bearer TOKEN
+
+### Update lead status
+PATCH http://localhost:8080/api/leads/1/status?status=QUALIFIED
+Authorization: Bearer TOKEN
+
+### Confirm sales order (publishes sales.order.confirmed with SKU/qty)
 PATCH http://localhost:8080/api/sales-orders/1/confirm
 Authorization: Bearer TOKEN
 

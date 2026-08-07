@@ -35,6 +35,10 @@ public class SalesOrder {
     @JoinColumn(name = "opportunity_id")
     private Opportunity opportunity;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quotation_id")
+    private Quotation quotation;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 

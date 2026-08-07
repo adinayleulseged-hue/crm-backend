@@ -1,6 +1,5 @@
 package com.crm.crm_backend.service.core;
 
-
 import com.crm.crm_backend.dto.request.PaymentCreateDTO;
 import com.crm.crm_backend.dto.request.PaymentUpdateDTO;
 import com.crm.crm_backend.dto.response.PaymentResponseDTO;
@@ -14,6 +13,8 @@ import com.crm.crm_backend.model.enums.PaymentStatus;
 import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.InvoiceRepository;
 import com.crm.crm_backend.repository.PaymentRepository;
+import com.crm.crm_backend.service.workflow.DomainStatusGuard;
+import com.crm.crm_backend.validator.PaymentValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,6 +35,7 @@ public class PaymentService {
     private final CustomerRepository customerRepository;
     private final PaymentMapper paymentMapper;
     private final PaymentEventPublisher paymentEventPublisher;
+    private final PaymentValidator paymentValidator;
 
     public PaymentResponseDTO createPayment(PaymentCreateDTO dto) {
 
@@ -42,6 +44,8 @@ public class PaymentService {
 
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        paymentValidator.validatePaymentAmount(invoice, dto.getAmount());
 
         Payment payment = paymentMapper.toEntity(dto);
 
@@ -52,7 +56,8 @@ public class PaymentService {
 
         Payment saved = paymentRepository.save(payment);
 
-        BigDecimal paidAmount = invoice.getPaidAmount().add(payment.getAmount());
+        BigDecimal paidAmount = (invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO)
+                .add(payment.getAmount());
 
         invoice.setPaidAmount(paidAmount);
 
@@ -61,8 +66,11 @@ public class PaymentService {
         invoice.setBalanceAmount(balance);
 
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
+            DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.PAID);
             invoice.setStatus(InvoiceStatus.PAID);
-        } else {
+        } else if (invoice.getStatus() == InvoiceStatus.DRAFT
+                || invoice.getStatus() == InvoiceStatus.SENT) {
+            DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.PENDING);
             invoice.setStatus(InvoiceStatus.PENDING);
         }
 

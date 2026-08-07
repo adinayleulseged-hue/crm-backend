@@ -1,6 +1,5 @@
 package com.crm.crm_backend.service.core;
 
-
 import com.crm.crm_backend.dto.request.OrderItemRequestDTO;
 import com.crm.crm_backend.dto.request.SalesOrderCreateDTO;
 import com.crm.crm_backend.dto.request.SalesOrderUpdateDTO;
@@ -16,6 +15,7 @@ import com.crm.crm_backend.model.enums.OrderStatus;
 import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.OpportunityRepository;
 import com.crm.crm_backend.repository.SalesOrderRepository;
+import com.crm.crm_backend.service.workflow.DomainStatusGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -58,32 +58,28 @@ public class SalesOrderService {
 
             for (OrderItemRequestDTO itemDTO : dto.getItems()) {
 
+                int qty = itemDTO.getQuantity() != null ? itemDTO.getQuantity() : 1;
+                BigDecimal unit = itemDTO.getUnitPrice() != null ? itemDTO.getUnitPrice() : BigDecimal.ZERO;
+                BigDecimal totalPrice = unit.multiply(BigDecimal.valueOf(qty));
+
                 OrderItem item = OrderItem.builder()
                         .itemName(itemDTO.getItemName())
+                        .sku(itemDTO.getSku())
                         .description(itemDTO.getDescription())
-                        .quantity(itemDTO.getQuantity())
-                        .unitPrice(itemDTO.getUnitPrice())
+                        .quantity(qty)
+                        .unitPrice(unit)
+                        .totalPrice(totalPrice)
                         .salesOrder(order)
                         .build();
 
-                BigDecimal totalPrice =
-                        itemDTO.getUnitPrice().multiply(
-                                BigDecimal.valueOf(itemDTO.getQuantity()));
-
-                item.setTotalPrice(totalPrice);
-
                 subtotal = subtotal.add(totalPrice);
-
                 order.getOrderItems().add(item);
             }
         }
 
         order.setSubtotal(subtotal);
-
         order.setDiscountAmount(BigDecimal.ZERO);
-
         order.setTaxAmount(BigDecimal.ZERO);
-
         order.setTotalAmount(subtotal);
 
         SalesOrder saved = salesOrderRepository.save(order);
@@ -116,6 +112,10 @@ public class SalesOrderService {
                 .orElseThrow(() ->
                         new RuntimeException("Sales Order not found"));
 
+        if (dto.getStatus() != null) {
+            DomainStatusGuard.assertOrderTransition(order.getStatus(), dto.getStatus());
+        }
+
         salesOrderMapper.updateEntityFromDTO(dto, order);
 
         SalesOrder updated = salesOrderRepository.save(order);
@@ -127,12 +127,12 @@ public class SalesOrderService {
         SalesOrder order = salesOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sales Order not found"));
 
-        if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalStateException("Cannot confirm a cancelled sales order");
-        }
+        DomainStatusGuard.assertOrderTransition(order.getStatus(), OrderStatus.APPROVED);
 
         order.setStatus(OrderStatus.APPROVED);
         SalesOrder confirmed = salesOrderRepository.save(order);
+        // Ensure line items are loaded for MMS event payload
+        confirmed.getOrderItems().size();
         orderEventPublisher.publishSalesOrderConfirmed(confirmed);
         log.info("Sales order {} confirmed", confirmed.getOrderNumber());
 
@@ -145,9 +145,15 @@ public class SalesOrderService {
                 .orElseThrow(() ->
                         new RuntimeException("Sales Order not found"));
 
+        if (order.getStatus() == OrderStatus.APPROVED
+                || order.getStatus() == OrderStatus.PROCESSING
+                || order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Cannot delete a sales order in status " + order.getStatus());
+        }
+
         salesOrderRepository.delete(order);
 
         log.info("Sales Order {} deleted", id);
     }
-
 }

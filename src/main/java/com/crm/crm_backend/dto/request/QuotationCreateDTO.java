@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class QuotationCreateDTO {
@@ -31,4 +32,6 @@ public class QuotationCreateDTO {
     private BigDecimal totalAmount;
 
     private String notes;
+
+    private List<QuotationItemRequestDTO> items;
 }

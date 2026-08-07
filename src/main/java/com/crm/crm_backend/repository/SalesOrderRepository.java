@@ -16,6 +16,10 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
 
     boolean existsByOrderNumber(String orderNumber);
 
+    boolean existsByQuotationId(Long quotationId);
+
+    Optional<SalesOrder> findByQuotationId(Long quotationId);
+
     List<SalesOrder> findByStatus(OrderStatus status);
 
     List<SalesOrder> findByCustomerId(Long customerId);
