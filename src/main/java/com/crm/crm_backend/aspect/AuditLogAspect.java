@@ -19,80 +19,84 @@ import java.time.LocalDateTime;
 @Slf4j
 public class AuditLogAspect {
 
+    private static final ThreadLocal<Boolean> AUDITING = ThreadLocal.withInitial(() -> false);
+
     private final AuditTrailService auditTrailService;
 
     @AfterReturning(
-            "execution(* com.crm.crm_backend.service.*.*.create*(..)) || " +
-                    "execution(* com.crm.crm_backend.service.*.*.save*(..))")
+            "execution(* com.crm.crm_backend.service.core.*.create*(..)) "
+                    + "&& !within(com.crm.crm_backend.service.core.AuditTrailService)")
     public void auditCreate(JoinPoint joinPoint) {
-
         saveAudit(joinPoint, AuditAction.CREATE);
-
     }
 
     @AfterReturning(
-            "execution(* com.crm.crm_backend.service.*.*.update*(..))")
+            "execution(* com.crm.crm_backend.service.core.*.update*(..)) "
+                    + "&& !within(com.crm.crm_backend.service.core.AuditTrailService)")
     public void auditUpdate(JoinPoint joinPoint) {
-
         saveAudit(joinPoint, AuditAction.UPDATE);
-
     }
 
     @AfterReturning(
-            "execution(* com.crm.crm_backend.service.*.*.delete*(..))")
+            "execution(* com.crm.crm_backend.service.core.*.delete*(..)) "
+                    + "&& !within(com.crm.crm_backend.service.core.AuditTrailService)")
     public void auditDelete(JoinPoint joinPoint) {
-
         saveAudit(joinPoint, AuditAction.DELETE);
-
     }
 
     private void saveAudit(JoinPoint joinPoint, AuditAction action) {
+        if (Boolean.TRUE.equals(AUDITING.get())) {
+            return;
+        }
 
-        String serviceName = joinPoint.getTarget().getClass().getSimpleName();
+        AUDITING.set(true);
+        try {
+            String serviceName = joinPoint.getTarget().getClass().getSimpleName();
 
-        AuditTrail auditTrail = AuditTrail.builder()
-                .module(resolveModule(serviceName))
-                .action(action)
-                .entityId(0L)
-                .entityName(serviceName.replace("Service", ""))
-                .performedBy("SYSTEM")
-                .performedAt(LocalDateTime.now())
-                .description(action + " executed on " + serviceName)
-                .ipAddress("127.0.0.1")
-                .build();
+            AuditTrail auditTrail = AuditTrail.builder()
+                    .module(resolveModule(serviceName))
+                    .action(action)
+                    .entityId(0L)
+                    .entityName(serviceName.replace("Service", ""))
+                    .performedBy("SYSTEM")
+                    .performedAt(LocalDateTime.now())
+                    .description(action + " executed on " + serviceName)
+                    .ipAddress("127.0.0.1")
+                    .build();
 
-        auditTrailService.save(auditTrail);
+            auditTrailService.save(auditTrail);
 
-        log.info("Audit saved for {}", serviceName);
+            log.info("Audit saved for {}", serviceName);
+        } finally {
+            AUDITING.remove();
+        }
     }
 
     private AuditModule resolveModule(String serviceName) {
-
-        if (serviceName.contains("Customer"))
+        if (serviceName.contains("Customer")) {
             return AuditModule.CUSTOMER;
-
-        if (serviceName.contains("Lead"))
+        }
+        if (serviceName.contains("Lead")) {
             return AuditModule.LEAD;
-
-        if (serviceName.contains("Opportunity"))
+        }
+        if (serviceName.contains("Opportunity")) {
             return AuditModule.OPPORTUNITY;
-
-        if (serviceName.contains("Interaction"))
+        }
+        if (serviceName.contains("Interaction")) {
             return AuditModule.INTERACTION;
-
-        if (serviceName.contains("Campaign"))
+        }
+        if (serviceName.contains("Campaign")) {
             return AuditModule.CAMPAIGN;
-
-        if (serviceName.contains("SalesOrder"))
+        }
+        if (serviceName.contains("SalesOrder")) {
             return AuditModule.SALES_ORDER;
-
-        if (serviceName.contains("Invoice"))
+        }
+        if (serviceName.contains("Invoice")) {
             return AuditModule.INVOICE;
-
-        if (serviceName.contains("Payment"))
+        }
+        if (serviceName.contains("Payment")) {
             return AuditModule.PAYMENT;
-
+        }
         return AuditModule.DASHBOARD;
     }
-
 }
