@@ -42,6 +42,8 @@ public class LeadCreateDTO {
 
     private Long campaignId;
 
+    private Long territoryId;
+
     private String internalNotes;
     private LeadSource source;
     private String sourceDetails;

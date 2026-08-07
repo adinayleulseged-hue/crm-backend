@@ -17,4 +17,5 @@ public class UserProfileDTO {
     private String email;
     private UserRole role;
     private boolean enabled;
+    private Long territoryId;
 }

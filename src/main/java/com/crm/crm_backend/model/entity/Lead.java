@@ -57,6 +57,10 @@ public class Lead extends BaseEntity {
     private String assignedTeam;
     private Long campaignId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "territory_id")
+    private Territory territory;
+
     private String preferredContactMethod;
     private String bestTimeToContact;
 

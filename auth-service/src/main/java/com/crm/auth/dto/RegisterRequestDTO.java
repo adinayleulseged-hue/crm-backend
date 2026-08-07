@@ -27,4 +27,7 @@ public class RegisterRequestDTO {
      * Defaults to EMPLOYEE when omitted.
      */
     private UserRole role = UserRole.EMPLOYEE;
+
+    /** Optional CRM territory assignment for the user. */
+    private Long territoryId;
 }

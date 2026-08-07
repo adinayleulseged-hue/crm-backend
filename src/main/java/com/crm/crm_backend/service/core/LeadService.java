@@ -18,16 +18,20 @@ import com.crm.crm_backend.model.enums.LeadStatus;
 import com.crm.crm_backend.model.enums.OpportunityType;
 import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.LeadRepository;
+import com.crm.crm_backend.repository.TerritoryRepository;
 import com.crm.crm_backend.service.workflow.DomainStatusGuard;
+import com.crm.crm_backend.spec.LeadSpecification;
 import com.crm.crm_backend.util.calculator.LeadScoreCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -44,6 +48,8 @@ public class LeadService {
     private final LeadScoreCalculator leadScoreCalculator;
     private final LeadEventPublisher leadEventPublisher;
     private final com.crm.crm_backend.validator.LeadValidator leadValidator;
+    private final LeadAssignmentService leadAssignmentService;
+    private final TerritoryRepository territoryRepository;
 
     @Transactional
     public LeadResponseDTO createLead(LeadCreateDTO dto) {
@@ -59,6 +65,7 @@ public class LeadService {
         }
 
         Lead lead = leadMapper.toEntity(dto);
+        applyTerritory(lead, dto.getTerritoryId());
 
         lead.setStatus(LeadStatus.NEW);
 
@@ -67,6 +74,10 @@ public class LeadService {
         );
 
         Lead saved = leadRepository.save(lead);
+
+        if (saved.getAssignedTo() == null || saved.getAssignedTo().isBlank()) {
+            leadAssignmentService.assignLead(saved);
+        }
 
         if (saved.getCampaignId() != null) {
             campaignService.recordLeadAttributed(saved.getCampaignId());
@@ -90,9 +101,23 @@ public class LeadService {
 
     @Transactional(readOnly = true)
     public Page<LeadResponseDTO> getAllLeads(Pageable pageable) {
+        return searchLeads(null, null, null, null, null, null, null, pageable);
+    }
 
-        return leadRepository.findByDeletedFalse(pageable)
-                .map(leadMapper::toResponseDTO);
+    @Transactional(readOnly = true)
+    public Page<LeadResponseDTO> searchLeads(
+            String q,
+            LeadStatus status,
+            String assignedTo,
+            Long territoryId,
+            Long campaignId,
+            LocalDate createdFrom,
+            LocalDate createdTo,
+            Pageable pageable) {
+
+        Specification<Lead> spec = LeadSpecification.withFilters(
+                q, status, assignedTo, territoryId, campaignId, createdFrom, createdTo);
+        return leadRepository.findAll(spec, pageable).map(leadMapper::toResponseDTO);
     }
 
     @Transactional
@@ -107,6 +132,9 @@ public class LeadService {
         leadValidator.validateUpdate(lead, dto);
 
         leadMapper.updateEntityFromDTO(dto, lead);
+        if (dto.getTerritoryId() != null) {
+            applyTerritory(lead, dto.getTerritoryId());
+        }
 
         lead.setLeadScore(
                 leadScoreCalculator.calculate(lead)
@@ -243,6 +271,18 @@ public class LeadService {
         dto.setIndustry(
                 lead.getIndustry());
 
+        if (lead.getTerritory() != null) {
+            dto.setTerritoryId(lead.getTerritory().getId());
+        }
+
         return dto;
+    }
+
+    private void applyTerritory(Lead lead, Long territoryId) {
+        if (territoryId == null) {
+            return;
+        }
+        lead.setTerritory(territoryRepository.findById(territoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Territory not found: " + territoryId)));
     }
 }

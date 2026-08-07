@@ -58,6 +58,8 @@ public class LeadUpdateDTO {
 
     private Long campaignId;
 
+    private Long territoryId;
+
     private String preferredContactMethod;
 
     private String bestTimeToContact;

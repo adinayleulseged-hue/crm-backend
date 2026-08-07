@@ -7,18 +7,23 @@ import com.crm.auth.dto.LogoutRequestDTO;
 import com.crm.auth.dto.RefreshTokenRequestDTO;
 import com.crm.auth.dto.RegisterRequestDTO;
 import com.crm.auth.dto.UserProfileDTO;
+import com.crm.auth.model.UserRole;
 import com.crm.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -65,5 +70,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserProfileDTO>> me(Authentication authentication) {
         UserProfileDTO profile = authService.currentUser(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success("Current user", profile));
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserProfileDTO>>> listUsers(
+            @RequestParam(required = false) UserRole role,
+            @RequestParam(required = false) Long territoryId) {
+        List<UserProfileDTO> users = authService.listUsers(role, territoryId);
+        return ResponseEntity.ok(ApiResponse.success("Users", users));
     }
 }

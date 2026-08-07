@@ -35,6 +35,9 @@ public class AuthUser {
     @Builder.Default
     private boolean enabled = true;
 
+    @Column(name = "territory_id")
+    private Long territoryId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

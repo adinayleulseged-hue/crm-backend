@@ -24,17 +24,21 @@ import com.crm.crm_backend.repository.OpportunityRepository;
 import com.crm.crm_backend.repository.QuotationRepository;
 import com.crm.crm_backend.repository.SalesOrderRepository;
 import com.crm.crm_backend.service.workflow.DomainStatusGuard;
+import com.crm.crm_backend.spec.QuotationSpecification;
+import com.crm.crm_backend.util.export.CsvGenerator;
 import com.crm.crm_backend.validator.QuotationValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -51,6 +55,7 @@ public class QuotationService {
     private final SalesOrderMapper salesOrderMapper;
     private final QuotationValidator quotationValidator;
     private final PricingService pricingService;
+    private final CsvGenerator csvGenerator;
 
     public QuotationResponseDTO createQuotation(QuotationCreateDTO dto) {
 
@@ -99,12 +104,68 @@ public class QuotationService {
 
     @Transactional
     public Page<QuotationResponseDTO> getAllQuotations(Pageable pageable) {
+        return searchQuotations(null, null, null, null, null, null, null, null, pageable);
+    }
 
-        return quotationRepository.findAll(pageable)
-                .map(q -> {
-                    expireIfPastDue(q);
-                    return toResponse(q);
+    @Transactional
+    public Page<QuotationResponseDTO> searchQuotations(
+            String q,
+            QuotationStatus status,
+            Long customerId,
+            Long opportunityId,
+            LocalDate issueFrom,
+            LocalDate issueTo,
+            LocalDate expiryFrom,
+            LocalDate expiryTo,
+            Pageable pageable) {
+
+        Specification<Quotation> spec = QuotationSpecification.withFilters(
+                q, status, customerId, opportunityId, issueFrom, issueTo, expiryFrom, expiryTo);
+        return quotationRepository.findAll(spec, pageable)
+                .map(quotation -> {
+                    expireIfPastDue(quotation);
+                    return toResponse(quotation);
                 });
+    }
+
+    @Transactional(readOnly = true)
+    public String exportQuotationsCsv(
+            String q,
+            QuotationStatus status,
+            Long customerId,
+            Long opportunityId,
+            LocalDate issueFrom,
+            LocalDate issueTo,
+            LocalDate expiryFrom,
+            LocalDate expiryTo) {
+
+        Specification<Quotation> spec = QuotationSpecification.withFilters(
+                q, status, customerId, opportunityId, issueFrom, issueTo, expiryFrom, expiryTo);
+        List<Quotation> quotations = quotationRepository.findAll(spec);
+
+        List<String> headers = List.of(
+                "id", "quotationNumber", "status", "customerId",
+                "issueDate", "expiryDate", "subtotal", "discount", "tax", "totalAmount");
+        List<List<String>> rows = new ArrayList<>();
+        for (Quotation quotation : quotations) {
+            rows.add(List.of(
+                    str(quotation.getId()),
+                    str(quotation.getQuotationNumber()),
+                    quotation.getStatus() != null ? quotation.getStatus().name() : "",
+                    quotation.getCustomer() != null ? str(quotation.getCustomer().getId()) : "",
+                    str(quotation.getIssueDate()),
+                    str(quotation.getExpiryDate()),
+                    str(quotation.getSubtotal()),
+                    str(quotation.getDiscount()),
+                    str(quotation.getTax()),
+                    str(quotation.getTotalAmount())
+            ));
+        }
+        return csvGenerator.toCsv(headers, rows);
+    }
+
+    private static String str(Object value) {
+        return value == null ? "" : String.valueOf(value);
     }
 
     public QuotationResponseDTO updateQuotation(Long id,

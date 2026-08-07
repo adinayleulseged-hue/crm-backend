@@ -20,9 +20,12 @@ public interface CustomerMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "territory", ignore = true)
     Customer toEntity(CustomerCreateDTO dto);
 
+    @Mapping(target = "territory", ignore = true)
     void updateEntity(CustomerUpdateDTO dto, @MappingTarget Customer customer);
 
+    @Mapping(target = "territoryId", source = "territory.id")
     CustomerResponseDTO toResponseDTO(Customer customer);
 }

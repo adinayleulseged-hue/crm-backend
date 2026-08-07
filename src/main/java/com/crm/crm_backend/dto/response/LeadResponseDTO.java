@@ -31,6 +31,7 @@ public class LeadResponseDTO {
     private String assignedTeam;
     private Long campaignId;
     private String notes;
+    private Long territoryId;
     private Long convertedCustomerId;
     private Long convertedOpportunityId;
     private LocalDateTime convertedAt;

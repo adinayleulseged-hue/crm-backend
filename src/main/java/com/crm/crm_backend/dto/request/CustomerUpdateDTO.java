@@ -44,4 +44,6 @@ public class CustomerUpdateDTO {
     private String customerPriority;
     private boolean governmentEntity;
     private String department;
+
+    private Long territoryId;
 }

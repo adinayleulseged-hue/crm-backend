@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -86,12 +87,13 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(requestedRole)
+                .territoryId(request.getTerritoryId())
                 .enabled(true)
                 .build();
 
         AuthUser saved = authUserRepository.save(user);
-        log.info("Registered user {} with role {} (adminCaller={})",
-                saved.getUsername(), saved.getRole(), adminCaller);
+        log.info("Registered user {} with role {} territoryId={} (adminCaller={})",
+                saved.getUsername(), saved.getRole(), saved.getTerritoryId(), adminCaller);
 
         return issueTokens(saved);
     }
@@ -152,12 +154,32 @@ public class AuthService {
         AuthUser user = authUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        return toProfile(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserProfileDTO> listUsers(UserRole role, Long territoryId) {
+        List<AuthUser> users;
+        if (role != null && territoryId != null) {
+            users = authUserRepository.findByRoleAndTerritoryIdAndEnabledTrue(role, territoryId);
+        } else if (role != null) {
+            users = authUserRepository.findByRoleAndEnabledTrue(role);
+        } else if (territoryId != null) {
+            users = authUserRepository.findByTerritoryIdAndEnabledTrue(territoryId);
+        } else {
+            users = authUserRepository.findByEnabledTrue();
+        }
+        return users.stream().map(this::toProfile).toList();
+    }
+
+    private UserProfileDTO toProfile(AuthUser user) {
         return UserProfileDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .enabled(user.isEnabled())
+                .territoryId(user.getTerritoryId())
                 .build();
     }
 

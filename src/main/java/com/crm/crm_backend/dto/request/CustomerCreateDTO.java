@@ -38,4 +38,6 @@ public class CustomerCreateDTO {
     private String website;
 
     private String description;
+
+    private Long territoryId;
 }

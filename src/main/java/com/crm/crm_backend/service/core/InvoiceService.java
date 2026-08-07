@@ -13,17 +13,21 @@ import com.crm.crm_backend.repository.CustomerRepository;
 import com.crm.crm_backend.repository.InvoiceRepository;
 import com.crm.crm_backend.repository.SalesOrderRepository;
 import com.crm.crm_backend.service.workflow.DomainStatusGuard;
+import com.crm.crm_backend.spec.InvoiceSpecification;
+import com.crm.crm_backend.util.export.CsvGenerator;
 import com.crm.crm_backend.validator.InvoiceValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -39,6 +43,7 @@ public class InvoiceService {
     private final InvoiceMapper invoiceMapper;
     private final InvoiceEventPublisher invoiceEventPublisher;
     private final InvoiceValidator invoiceValidator;
+    private final CsvGenerator csvGenerator;
 
     public InvoiceResponseDTO createInvoice(InvoiceCreateDTO dto) {
 
@@ -91,9 +96,68 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Page<InvoiceResponseDTO> getAllInvoices(Pageable pageable) {
+        return searchInvoices(null, null, null, null, null, null, null, null, pageable);
+    }
 
-        return invoiceRepository.findAll(pageable)
-                .map(invoiceMapper::toResponseDTO);
+    @Transactional(readOnly = true)
+    public Page<InvoiceResponseDTO> searchInvoices(
+            String q,
+            InvoiceStatus status,
+            Long customerId,
+            Long salesOrderId,
+            LocalDate dueFrom,
+            LocalDate dueTo,
+            LocalDate invoiceFrom,
+            LocalDate invoiceTo,
+            Pageable pageable) {
+
+        Specification<Invoice> spec = InvoiceSpecification.withFilters(
+                q, status, customerId, salesOrderId, dueFrom, dueTo, invoiceFrom, invoiceTo);
+        return invoiceRepository.findAll(spec, pageable).map(invoiceMapper::toResponseDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public String exportInvoicesCsv(
+            String q,
+            InvoiceStatus status,
+            Long customerId,
+            Long salesOrderId,
+            LocalDate dueFrom,
+            LocalDate dueTo,
+            LocalDate invoiceFrom,
+            LocalDate invoiceTo) {
+
+        Specification<Invoice> spec = InvoiceSpecification.withFilters(
+                q, status, customerId, salesOrderId, dueFrom, dueTo, invoiceFrom, invoiceTo);
+        List<Invoice> invoices = invoiceRepository.findAll(spec);
+
+        List<String> headers = List.of(
+                "id", "invoiceNumber", "status", "customerId", "salesOrderId",
+                "invoiceDate", "dueDate", "subtotal", "discountAmount", "taxAmount",
+                "totalAmount", "paidAmount", "balanceAmount");
+        List<List<String>> rows = new ArrayList<>();
+        for (Invoice invoice : invoices) {
+            rows.add(List.of(
+                    str(invoice.getId()),
+                    str(invoice.getInvoiceNumber()),
+                    invoice.getStatus() != null ? invoice.getStatus().name() : "",
+                    invoice.getCustomer() != null ? str(invoice.getCustomer().getId()) : "",
+                    invoice.getSalesOrder() != null ? str(invoice.getSalesOrder().getId()) : "",
+                    str(invoice.getInvoiceDate()),
+                    str(invoice.getDueDate()),
+                    str(invoice.getSubtotal()),
+                    str(invoice.getDiscountAmount()),
+                    str(invoice.getTaxAmount()),
+                    str(invoice.getTotalAmount()),
+                    str(invoice.getPaidAmount()),
+                    str(invoice.getBalanceAmount())
+            ));
+        }
+        return csvGenerator.toCsv(headers, rows);
+    }
+
+    private static String str(Object value) {
+        return value == null ? "" : String.valueOf(value);
     }
 
     public InvoiceResponseDTO updateInvoice(Long id,

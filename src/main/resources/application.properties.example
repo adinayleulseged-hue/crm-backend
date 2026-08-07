@@ -95,3 +95,7 @@ crm.observability.correlation-header=X-Correlation-Id
 
 # CORS (comma-separated; avoid *)
 crm.cors.allowed-origins=${CRM_CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+# Lead auto-assignment: territory manager first, else round-robin officers
+crm.lead.assignment.enabled=${CRM_LEAD_ASSIGNMENT_ENABLED:true}
+crm.lead.assignment.officers=${CRM_LEAD_ASSIGNMENT_OFFICERS:sales}

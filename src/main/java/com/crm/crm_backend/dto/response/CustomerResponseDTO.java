@@ -37,6 +37,7 @@ public class CustomerResponseDTO {
     private String department;
     private String dataClassification;
     private String securityClearance;
+    private Long territoryId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

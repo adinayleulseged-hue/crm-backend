@@ -11,10 +11,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/quotations")
@@ -32,6 +37,26 @@ public class QuotationController {
                 .body(ApiResponse.success("Quotation created", quotationService.createQuotation(dto)));
     }
 
+    @GetMapping("/export.csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
+    public ResponseEntity<String> exportQuotations(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) QuotationStatus status,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long opportunityId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate issueFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate issueTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryTo) {
+
+        String csv = quotationService.exportQuotationsCsv(
+                q, status, customerId, opportunityId, issueFrom, issueTo, expiryFrom, expiryTo);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"quotations.csv\"")
+                .contentType(new MediaType("text", "csv"))
+                .body(csv);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<QuotationResponseDTO>> getQuotation(
@@ -43,9 +68,19 @@ public class QuotationController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Page<QuotationResponseDTO>>> getAllQuotations(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) QuotationStatus status,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long opportunityId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate issueFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate issueTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryTo,
             Pageable pageable) {
 
-        return ResponseEntity.ok(ApiResponse.success(quotationService.getAllQuotations(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(
+                quotationService.searchQuotations(
+                        q, status, customerId, opportunityId, issueFrom, issueTo, expiryFrom, expiryTo, pageable)));
     }
 
     @PutMapping("/{id}")

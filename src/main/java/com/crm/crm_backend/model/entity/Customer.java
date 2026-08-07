@@ -58,6 +58,10 @@ public class Customer extends BaseEntity {
     private String customerPriority = "STANDARD";
 
     private boolean governmentEntity = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "territory_id")
+    private Territory territory;
     private String department;
 
     @ManyToOne

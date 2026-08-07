@@ -6,16 +6,21 @@ import com.crm.crm_backend.common.ApiResponse;
 import com.crm.crm_backend.dto.request.CustomerCreateDTO;
 import com.crm.crm_backend.dto.request.CustomerUpdateDTO;
 import com.crm.crm_backend.dto.response.CustomerResponseDTO;
+import com.crm.crm_backend.model.enums.CustomerStatus;
+import com.crm.crm_backend.model.enums.CustomerType;
 import com.crm.crm_backend.service.core.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping({"/api/customers", "/api/crm/customers"})
@@ -53,8 +58,17 @@ public class CustomerController  {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
     public ResponseEntity<ApiResponse<Page<CustomerResponseDTO>>> getAllCustomers(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) CustomerStatus status,
+            @RequestParam(required = false) CustomerType customerType,
+            @RequestParam(required = false) Long territoryId,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<CustomerResponseDTO> customers = customerService.getAllCustomers(pageable);
+        Page<CustomerResponseDTO> customers = customerService.searchCustomers(
+                q, status, customerType, territoryId, city, country, createdFrom, createdTo, pageable);
         return ResponseEntity.ok(ApiResponse.success(customers));
     }
 

@@ -23,11 +23,15 @@ public interface LeadMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "territory", ignore = true)
     Lead toEntity(LeadCreateDTO dto);
 
     @Mapping(target = "convertedCustomerId", source = "convertedCustomer.id")
+    @Mapping(target = "territoryId", source = "territory.id")
     LeadResponseDTO toResponseDTO(Lead entity);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "territory", ignore = true)
     void updateEntityFromDTO(
             LeadUpdateDTO dto,
             @MappingTarget Lead entity);

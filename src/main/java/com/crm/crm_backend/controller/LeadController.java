@@ -5,15 +5,19 @@ import com.crm.crm_backend.dto.request.LeadConvertDTO;
 import com.crm.crm_backend.dto.request.LeadCreateDTO;
 import com.crm.crm_backend.dto.request.LeadUpdateDTO;
 import com.crm.crm_backend.dto.response.LeadResponseDTO;
+import com.crm.crm_backend.model.enums.LeadStatus;
 import com.crm.crm_backend.service.core.LeadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/leads")
@@ -43,9 +47,17 @@ public class LeadController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Page<LeadResponseDTO>>> getAllLeads(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) LeadStatus status,
+            @RequestParam(required = false) String assignedTo,
+            @RequestParam(required = false) Long territoryId,
+            @RequestParam(required = false) Long campaignId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Pageable pageable) {
 
-        return ResponseEntity.ok(ApiResponse.success(leadService.getAllLeads(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(
+                leadService.searchLeads(q, status, assignedTo, territoryId, campaignId, createdFrom, createdTo, pageable)));
     }
 
     @PutMapping("/{id}")

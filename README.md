@@ -76,6 +76,7 @@ Clients should call the **gateway** at **http://localhost:8080**.
 | POST | `/api/auth/refresh` | Rotate refresh token; issue new access token |
 | POST | `/api/auth/logout` | Blacklist access `jti` + revoke refresh tokens |
 | GET | `/api/auth/me` | Current user profile (JWT required) |
+| GET | `/api/auth/users?role=&territoryId=` | List enabled users (ADMIN only) |
 
 Defaults: access token **15 minutes** (`JWT_EXPIRATION_MS`), refresh token **7 days** (`JWT_REFRESH_EXPIRATION_MS`).
 
@@ -172,6 +173,7 @@ CORS uses explicit origins (SecurityConfig / gateway / auth) — controllers no 
 | `POST /api/auth/refresh` | Public (valid refresh token required in body) |
 | `POST /api/auth/logout` | Public (accepts Bearer access and/or refresh token body) |
 | `GET /api/auth/me` | JWT required |
+| `GET /api/auth/users` | ADMIN JWT required (`role`, `territoryId` optional filters) |
 
 Gateway JWT defaults **on** (`GATEWAY_JWT_ENABLED=true`). Set `INTEGRATION_ALLOW_FALLBACK=false` in production so MMS/FMS do not fake success.
 
@@ -222,6 +224,29 @@ All CRM endpoints return:
 ```
 
 Frontend should read payload from `data` (including Spring `Page` objects for list endpoints). Errors from `CustomExceptionHandler` use the same shape with `success: false`.
+
+### List filters, territories & CSV exports
+
+Optional query filters on list endpoints (all combine with Spring `Pageable`):
+
+| Resource | Filters |
+|----------|---------|
+| `GET /api/leads` | `q`, `status`, `assignedTo`, `territoryId`, `campaignId`, `createdFrom`, `createdTo` |
+| `GET /api/customers` | `q`, `status`, `customerType`, `territoryId`, `city`, `country`, `createdFrom`, `createdTo` |
+| `GET /api/quotations` | `q`, `status`, `customerId`, `opportunityId`, `issueFrom`, `issueTo`, `expiryFrom`, `expiryTo` |
+| `GET /api/invoices` | `q`, `status`, `customerId`, `salesOrderId`, `dueFrom`, `dueTo`, `invoiceFrom`, `invoiceTo` |
+
+`territoryId` on leads/customers links CRM records to `/api/territories`. Auth users may also carry `territoryId` (register body + `UserProfileDTO`); admins can filter `GET /api/auth/users?territoryId=`.
+
+Lead auto-assignment (`LeadAssignmentService`): prefers the territory `managerUsername`, otherwise round-robins usernames from `crm.lead.assignment.officers` (comma-separated, default `sales`). Disable with `crm.lead.assignment.enabled=false`.
+
+CSV exports (`text/csv`):
+
+| Path | Content |
+|------|---------|
+| `GET /api/quotations/export.csv` | Quotation rows (same filters as list) |
+| `GET /api/invoices/export.csv` | Invoice rows (same filters as list) |
+| `GET /api/reports/export.csv` | Pipeline / revenue KPI summary (`generateReport` + forecasting fields) |
 
 ### Pricing / territories / campaign metrics
 
