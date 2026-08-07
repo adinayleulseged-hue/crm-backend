@@ -54,6 +54,8 @@ class QuotationServiceAcceptTest {
     private SalesOrderMapper salesOrderMapper;
     @Mock
     private QuotationValidator quotationValidator;
+    @Mock
+    private PricingService pricingService;
 
     @InjectMocks
     private QuotationService quotationService;

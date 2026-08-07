@@ -1,8 +1,10 @@
 package com.crm.crm_backend.service.core;
 
+import com.crm.crm_backend.dto.request.PricingApplyRequestDTO;
 import com.crm.crm_backend.dto.request.QuotationCreateDTO;
 import com.crm.crm_backend.dto.request.QuotationItemRequestDTO;
 import com.crm.crm_backend.dto.request.QuotationUpdateDTO;
+import com.crm.crm_backend.dto.response.PricingApplyResponseDTO;
 import com.crm.crm_backend.dto.response.QuotationResponseDTO;
 import com.crm.crm_backend.dto.response.SalesOrderResponseDTO;
 import com.crm.crm_backend.exception.QuotationNotFoundException;
@@ -22,6 +24,7 @@ import com.crm.crm_backend.repository.OpportunityRepository;
 import com.crm.crm_backend.repository.QuotationRepository;
 import com.crm.crm_backend.repository.SalesOrderRepository;
 import com.crm.crm_backend.service.workflow.DomainStatusGuard;
+import com.crm.crm_backend.validator.QuotationValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -45,7 +49,8 @@ public class QuotationService {
     private final SalesOrderRepository salesOrderRepository;
     private final QuotationMapper quotationMapper;
     private final SalesOrderMapper salesOrderMapper;
-    private final com.crm.crm_backend.validator.QuotationValidator quotationValidator;
+    private final QuotationValidator quotationValidator;
+    private final PricingService pricingService;
 
     public QuotationResponseDTO createQuotation(QuotationCreateDTO dto) {
 
@@ -65,7 +70,14 @@ public class QuotationService {
         quotation.setStatus(QuotationStatus.DRAFT);
         quotation.setActive(true);
 
-        applyItemsAndTotals(quotation, dto);
+        applyItemsAndTotals(
+                quotation,
+                dto.getItems(),
+                dto.getSubtotal(),
+                dto.getDiscount(),
+                dto.getTax(),
+                dto.getTotalAmount(),
+                dto.getApplyPricingRules());
 
         Quotation saved = quotationRepository.save(quotation);
 
@@ -107,6 +119,40 @@ public class QuotationService {
         }
 
         quotationMapper.updateEntityFromDTO(dto, quotation);
+
+        if (dto.getItems() != null) {
+            quotationValidator.validateItems(dto.getItems());
+            applyItemsAndTotals(
+                    quotation,
+                    dto.getItems(),
+                    dto.getSubtotal(),
+                    dto.getDiscount(),
+                    dto.getTax(),
+                    dto.getTotalAmount(),
+                    dto.getApplyPricingRules());
+        } else if (dto.getSubtotal() != null || dto.getDiscount() != null
+                || dto.getTax() != null || dto.getTotalAmount() != null) {
+            // Header-only recalculation when items are not replaced
+            BigDecimal subtotal = dto.getSubtotal() != null ? dto.getSubtotal() : quotation.getSubtotal();
+            if (subtotal == null) {
+                subtotal = BigDecimal.ZERO;
+            }
+            boolean applyPricing = dto.getApplyPricingRules() == null || dto.getApplyPricingRules();
+            if (applyPricing && (quotation.getItems() == null || quotation.getItems().isEmpty())) {
+                PricingApplyResponseDTO priced = priceAmount(subtotal, null);
+                subtotal = priced.getFinalAmount();
+            }
+            BigDecimal discount = dto.getDiscount() != null ? dto.getDiscount()
+                    : (quotation.getDiscount() != null ? quotation.getDiscount() : BigDecimal.ZERO);
+            BigDecimal tax = dto.getTax() != null ? dto.getTax()
+                    : (quotation.getTax() != null ? quotation.getTax() : BigDecimal.ZERO);
+            quotation.setSubtotal(subtotal);
+            quotation.setDiscount(discount);
+            quotation.setTax(tax);
+            quotation.setTotalAmount(dto.getTotalAmount() != null
+                    ? dto.getTotalAmount()
+                    : subtotal.add(tax).subtract(discount));
+        }
 
         Quotation updated = quotationRepository.save(quotation);
 
@@ -219,23 +265,52 @@ public class QuotationService {
         log.info("Quotation {} deleted", id);
     }
 
-    private void applyItemsAndTotals(Quotation quotation, QuotationCreateDTO dto) {
-        BigDecimal discount = dto.getDiscount() != null ? dto.getDiscount() : BigDecimal.ZERO;
-        BigDecimal tax = dto.getTax() != null ? dto.getTax() : BigDecimal.ZERO;
+    private void applyItemsAndTotals(
+            Quotation quotation,
+            List<QuotationItemRequestDTO> items,
+            BigDecimal requestedSubtotal,
+            BigDecimal requestedDiscount,
+            BigDecimal requestedTax,
+            BigDecimal requestedTotal,
+            Boolean applyPricingRules) {
 
-        if (dto.getItems() != null && !dto.getItems().isEmpty()) {
+        BigDecimal discount = requestedDiscount != null ? requestedDiscount : BigDecimal.ZERO;
+        BigDecimal tax = requestedTax != null ? requestedTax : BigDecimal.ZERO;
+        boolean applyPricing = applyPricingRules == null || applyPricingRules;
+
+        quotation.getItems().clear();
+
+        if (items != null && !items.isEmpty()) {
             BigDecimal subtotal = BigDecimal.ZERO;
-            for (QuotationItemRequestDTO itemDto : dto.getItems()) {
+            for (QuotationItemRequestDTO itemDto : items) {
                 int qty = itemDto.getQuantity() != null ? itemDto.getQuantity() : 1;
+                if (qty <= 0) {
+                    qty = 1;
+                }
                 BigDecimal unit = itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : BigDecimal.ZERO;
-                BigDecimal lineTotal = unit.multiply(BigDecimal.valueOf(qty));
+                BigDecimal lineBase = unit.multiply(BigDecimal.valueOf(qty));
+
+                BigDecimal lineTotal = lineBase;
+                BigDecimal pricedUnit = unit;
+                if (applyPricing) {
+                    PricingApplyResponseDTO priced = priceAmount(lineBase, itemDto.getSku());
+                    lineTotal = priced.getFinalAmount();
+                    pricedUnit = lineTotal.divide(BigDecimal.valueOf(qty), 2, RoundingMode.HALF_UP);
+                    if (priced.getAppliedRuleCode() != null) {
+                        log.info("Applied pricing rule {} to quotation line sku={} base={} final={}",
+                                priced.getAppliedRuleCode(),
+                                itemDto.getSku(),
+                                lineBase,
+                                lineTotal);
+                    }
+                }
 
                 QuotationItem item = QuotationItem.builder()
                         .itemName(itemDto.getItemName() != null ? itemDto.getItemName() : "Item")
                         .sku(itemDto.getSku())
                         .description(itemDto.getDescription())
                         .quantity(qty)
-                        .unitPrice(unit)
+                        .unitPrice(pricedUnit)
                         .totalPrice(lineTotal)
                         .quotation(quotation)
                         .build();
@@ -247,14 +322,29 @@ public class QuotationService {
             quotation.setTax(tax);
             quotation.setTotalAmount(subtotal.add(tax).subtract(discount));
         } else {
-            BigDecimal subtotal = dto.getSubtotal() != null ? dto.getSubtotal() : BigDecimal.ZERO;
+            BigDecimal subtotal = requestedSubtotal != null ? requestedSubtotal : BigDecimal.ZERO;
+            if (applyPricing) {
+                PricingApplyResponseDTO priced = priceAmount(subtotal, null);
+                subtotal = priced.getFinalAmount();
+                if (priced.getAppliedRuleCode() != null) {
+                    log.info("Applied pricing rule {} to quotation header subtotal final={}",
+                            priced.getAppliedRuleCode(), subtotal);
+                }
+            }
             quotation.setSubtotal(subtotal);
             quotation.setDiscount(discount);
             quotation.setTax(tax);
-            quotation.setTotalAmount(dto.getTotalAmount() != null
-                    ? dto.getTotalAmount()
+            quotation.setTotalAmount(requestedTotal != null
+                    ? requestedTotal
                     : subtotal.add(tax).subtract(discount));
         }
+    }
+
+    private PricingApplyResponseDTO priceAmount(BigDecimal baseAmount, String sku) {
+        PricingApplyRequestDTO request = new PricingApplyRequestDTO();
+        request.setBaseAmount(baseAmount != null ? baseAmount : BigDecimal.ZERO);
+        request.setProductSku(sku);
+        return pricingService.applyPricing(request);
     }
 
     private QuotationResponseDTO toResponse(Quotation quotation) {

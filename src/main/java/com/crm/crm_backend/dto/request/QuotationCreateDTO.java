@@ -34,4 +34,10 @@ public class QuotationCreateDTO {
     private String notes;
 
     private List<QuotationItemRequestDTO> items;
+
+    /**
+     * When null/true, active pricing rules are applied to line (or header) amounts.
+     * Set false to keep submitted unit prices as-is.
+     */
+    private Boolean applyPricingRules;
 }
