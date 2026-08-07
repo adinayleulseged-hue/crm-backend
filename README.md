@@ -42,12 +42,14 @@ Use the **same** `JWT_SECRET` in Auth (`auth.security.jwt.secret`) and CRM (`crm
 `application.properties` files are gitignored — never commit secrets.  
 Gateway config (`api-gateway/.../application.properties`) has no secrets and is committed.
 
-### 2. Start RabbitMQ
+### 2. Start RabbitMQ + Redis
 
 ```bash
-docker compose up -d rabbitmq
+docker compose up -d rabbitmq redis
 ```
 
+Redis is used for the **shared JWT blacklist** after logout (`auth:jwt:blacklist:{jti}`).  
+If Redis is unavailable locally, set `REDIS_BLACKLIST_ENABLED=false` on auth, gateway, and CRM.
 ### 3. Run all three services
 
 ```bash
@@ -77,8 +79,11 @@ Clients should call the **gateway** at **http://localhost:8080**.
 
 Defaults: access token **15 minutes** (`JWT_EXPIRATION_MS`), refresh token **7 days** (`JWT_REFRESH_EXPIRATION_MS`).
 
+On logout, auth-service blacklists the access token `jti` in Postgres **and** Redis.  
+API Gateway (and CRM) reject blacklisted tokens immediately — not only after natural expiry.
+
 CRM no longer owns users (`crm_users` dropped in Flyway `V2__drop_crm_users.sql`).  
-CRM validates JWTs from Auth Service claims only (signature + expiry). Auth-service additionally rejects blacklisted access tokens on `/me` and other protected auth routes.
+CRM validates JWTs from Auth Service claims only (signature + expiry + optional Redis blacklist).
 
 ### Seeded users (Auth Service)
 

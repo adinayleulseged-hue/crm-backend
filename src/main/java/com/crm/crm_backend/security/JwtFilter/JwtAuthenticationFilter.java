@@ -1,11 +1,13 @@
 package com.crm.crm_backend.security.JwtFilter;
 
+import com.crm.crm_backend.security.JwtBlacklist.RedisJwtBlacklistChecker;
 import com.crm.crm_backend.security.JwtService.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,13 +21,14 @@ import java.util.List;
 
 /**
  * Validates JWTs issued by the shared Auth Service using claim-based authorities
- * (no local user store lookup).
+ * (no local user store lookup). Optionally rejects blacklisted jti via Redis.
  */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final ObjectProvider<RedisJwtBlacklistChecker> blacklistChecker;
 
     @Override
     protected void doFilterInternal(
@@ -44,6 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (jwtService.isTokenValid(token)
+                    && !isBlacklisted(token)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 String username = jwtService.extractUsername(token);
@@ -64,5 +68,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isBlacklisted(String token) {
+        RedisJwtBlacklistChecker checker = blacklistChecker.getIfAvailable();
+        if (checker == null) {
+            return false;
+        }
+        String jti = jwtService.extractJti(token);
+        return checker.isBlacklisted(jti);
     }
 }

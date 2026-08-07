@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
@@ -20,7 +21,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 /**
- * Optional edge JWT validation. Auth routes and health remain public.
+ * Edge JWT validation plus shared Redis jti blacklist check.
  * Enable with gateway.security.jwt.enabled=true.
  */
 @Component
@@ -28,9 +29,13 @@ import java.util.Date;
 public class JwtAuthGatewayFilter implements WebFilter, Ordered {
 
     private final SecretKey signingKey;
+    private final ReactiveJwtBlacklistStore blacklistStore;
 
-    public JwtAuthGatewayFilter(@Value("${gateway.security.jwt.secret}") String secret) {
+    public JwtAuthGatewayFilter(
+            @Value("${gateway.security.jwt.secret}") String secret,
+            ObjectProvider<ReactiveJwtBlacklistStore> blacklistStore) {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        this.blacklistStore = blacklistStore.getIfAvailable();
     }
 
     @Override
@@ -59,7 +64,28 @@ public class JwtAuthGatewayFilter implements WebFilter, Ordered {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
-            return chain.filter(exchange);
+
+            String jti = claims.getId();
+            if ((jti == null || jti.isBlank()) && claims.get("jti") != null) {
+                jti = String.valueOf(claims.get("jti"));
+            }
+
+            if (blacklistStore == null || jti == null || jti.isBlank()) {
+                return chain.filter(exchange);
+            }
+
+            return blacklistStore.isBlacklisted(jti)
+                    .flatMap(revoked -> {
+                        if (Boolean.TRUE.equals(revoked)) {
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return exchange.getResponse().setComplete();
+                        }
+                        return chain.filter(exchange);
+                    })
+                    .onErrorResume(ex -> {
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().setComplete();
+                    });
         } catch (Exception ex) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();

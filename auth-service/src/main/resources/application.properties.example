@@ -18,7 +18,15 @@ spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 
 # Shared JWT secret with CRM (Base64, >= 256 bits after decode)
 auth.security.jwt.secret=${JWT_SECRET:Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==}
-auth.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
+auth.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:900000}
+auth.security.jwt.refresh-expiration-ms=${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+# Shared Redis JWT blacklist (set REDIS_BLACKLIST_ENABLED=false if Redis is unavailable)
+auth.security.redis-blacklist.enabled=${REDIS_BLACKLIST_ENABLED:true}
+auth.security.redis-blacklist.fail-closed=${REDIS_BLACKLIST_FAIL_CLOSED:true}
+spring.data.redis.host=${REDIS_HOST:localhost}
+spring.data.redis.port=${REDIS_PORT:6379}
+spring.data.redis.password=${REDIS_PASSWORD:}
 
 # CORS (comma-separated; avoid *)
 auth.cors.allowed-origins=${AUTH_CORS_ORIGINS:http://localhost:3000,http://localhost:5173}

@@ -26,7 +26,14 @@ logging.level.org.flywaydb=INFO
 
 # JWT validation only (must match auth-service auth.security.jwt.secret)
 crm.security.jwt.secret=${JWT_SECRET:Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==}
-crm.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
+crm.security.jwt.expiration-ms=${JWT_EXPIRATION_MS:900000}
+crm.security.jwt.blacklist-enabled=${REDIS_BLACKLIST_ENABLED:true}
+crm.security.jwt.blacklist-fail-closed=${REDIS_BLACKLIST_FAIL_CLOSED:true}
+
+# Redis shared JWT blacklist (docker compose up -d redis)
+spring.data.redis.host=${REDIS_HOST:localhost}
+spring.data.redis.port=${REDIS_PORT:6379}
+spring.data.redis.password=${REDIS_PASSWORD:}
 
 # RabbitMQ (docker compose up -d rabbitmq)
 spring.rabbitmq.host=${RABBITMQ_HOST:localhost}

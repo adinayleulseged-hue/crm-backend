@@ -31,7 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 @TestPropertySource(properties = {
         "crm.security.jwt.secret=Y3JtLWp3dC1zZWNyZXQtaW5zYS1lcnAtcGhhc2UtMS1rZXktMjAyNg==",
-        "crm.security.jwt.expiration-ms=86400000"
+        "crm.security.jwt.expiration-ms=86400000",
+        "crm.security.jwt.blacklist-enabled=false"
 })
 class JwtProtectedApiIntegrationTest {
 

@@ -36,6 +36,17 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
+    public String extractJti(String token) {
+        return extractClaim(token, claims -> {
+            String jti = claims.getId();
+            if (jti == null || jti.isBlank()) {
+                Object claim = claims.get("jti");
+                return claim != null ? String.valueOf(claim) : null;
+            }
+            return jti;
+        });
+    }
+
     public boolean isTokenValid(String token) {
         try {
             return !isTokenExpired(token);
