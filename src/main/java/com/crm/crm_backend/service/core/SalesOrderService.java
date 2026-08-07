@@ -36,8 +36,11 @@ public class SalesOrderService {
     private final OpportunityRepository opportunityRepository;
     private final SalesOrderMapper salesOrderMapper;
     private final OrderEventPublisher orderEventPublisher;
+    private final com.crm.crm_backend.validator.SalesOrderValidator salesOrderValidator;
 
     public SalesOrderResponseDTO createSalesOrder(SalesOrderCreateDTO dto) {
+
+        salesOrderValidator.validateCreate(dto);
 
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
@@ -127,12 +130,12 @@ public class SalesOrderService {
         SalesOrder order = salesOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sales Order not found"));
 
+        order.getOrderItems().size();
+        salesOrderValidator.validateCanConfirm(order);
         DomainStatusGuard.assertOrderTransition(order.getStatus(), OrderStatus.APPROVED);
 
         order.setStatus(OrderStatus.APPROVED);
         SalesOrder confirmed = salesOrderRepository.save(order);
-        // Ensure line items are loaded for MMS event payload
-        confirmed.getOrderItems().size();
         orderEventPublisher.publishSalesOrderConfirmed(confirmed);
         log.info("Sales order {} confirmed", confirmed.getOrderNumber());
 

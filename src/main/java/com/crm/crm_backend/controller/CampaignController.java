@@ -65,4 +65,22 @@ public class CampaignController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    public ResponseEntity<CampaignResponseDTO> activateCampaign(@PathVariable Long id) {
+        return ResponseEntity.ok(campaignService.activateCampaign(id));
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    public ResponseEntity<CampaignResponseDTO> completeCampaign(@PathVariable Long id) {
+        return ResponseEntity.ok(campaignService.completeCampaign(id));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_OFFICER')")
+    public ResponseEntity<CampaignResponseDTO> cancelCampaign(@PathVariable Long id) {
+        return ResponseEntity.ok(campaignService.cancelCampaign(id));
+    }
 }

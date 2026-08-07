@@ -1,5 +1,6 @@
 package com.crm.crm_backend.service.workflow;
 
+import com.crm.crm_backend.model.enums.CampaignStatus;
 import com.crm.crm_backend.model.enums.InvoiceStatus;
 import com.crm.crm_backend.model.enums.LeadStatus;
 import com.crm.crm_backend.model.enums.OpportunityStage;
@@ -30,6 +31,9 @@ public final class DomainStatusGuard {
 
     private static final Map<InvoiceStatus, Set<InvoiceStatus>> INVOICE =
             new EnumMap<>(InvoiceStatus.class);
+
+    private static final Map<CampaignStatus, Set<CampaignStatus>> CAMPAIGN =
+            new EnumMap<>(CampaignStatus.class);
 
     static {
         LEAD.put(LeadStatus.NEW, EnumSet.of(
@@ -82,6 +86,13 @@ public final class DomainStatusGuard {
         INVOICE.put(InvoiceStatus.OVERDUE, EnumSet.of(InvoiceStatus.PAID, InvoiceStatus.CANCELLED));
         INVOICE.put(InvoiceStatus.PAID, EnumSet.noneOf(InvoiceStatus.class));
         INVOICE.put(InvoiceStatus.CANCELLED, EnumSet.noneOf(InvoiceStatus.class));
+
+        CAMPAIGN.put(CampaignStatus.PLANNED, EnumSet.of(
+                CampaignStatus.ACTIVE, CampaignStatus.CANCELLED));
+        CAMPAIGN.put(CampaignStatus.ACTIVE, EnumSet.of(
+                CampaignStatus.COMPLETED, CampaignStatus.CANCELLED));
+        CAMPAIGN.put(CampaignStatus.COMPLETED, EnumSet.noneOf(CampaignStatus.class));
+        CAMPAIGN.put(CampaignStatus.CANCELLED, EnumSet.noneOf(CampaignStatus.class));
     }
 
     private DomainStatusGuard() {
@@ -105,6 +116,10 @@ public final class DomainStatusGuard {
 
     public static void assertInvoiceTransition(InvoiceStatus from, InvoiceStatus to) {
         assertTransition("Invoice", from, to, INVOICE.getOrDefault(from, Set.of()));
+    }
+
+    public static void assertCampaignTransition(CampaignStatus from, CampaignStatus to) {
+        assertTransition("Campaign", from, to, CAMPAIGN.getOrDefault(from, Set.of()));
     }
 
     private static <E extends Enum<E>> void assertTransition(

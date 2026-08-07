@@ -98,6 +98,35 @@ Content-Type: application/json
 
 Use `Authorization: Bearer <accessToken>` on CRM routes (see `test.http`).
 
+## End-to-end sales pipeline (happy path)
+
+Verified chain (run sequentially via `test.http`):
+
+| Step | Action | Endpoint | Expected status / result |
+|------|--------|----------|--------------------------|
+| 1 | Create lead | `POST /api/leads` | Lead `NEW` |
+| 2 | Qualify | `PATCH /api/leads/{id}/status?status=QUALIFIED` | Lead `QUALIFIED` |
+| 3 | Convert | `PATCH /api/leads/{id}/convert` | Lead `CONVERTED`; customer + opportunity (`stage=NEW`); response includes `convertedCustomerId` / `convertedOpportunityId` |
+| 4 | Create quotation | `POST /api/quotations` | Quotation `DRAFT` |
+| 5 | Send (optional) | `PATCH /api/quotations/{id}/status?status=SENT` | Quotation `SENT` |
+| 6 | Accept | `PATCH /api/quotations/{id}/accept` | Quotation `ACCEPTED`; linked sales order `DRAFT` (response is the order) |
+| 7 | Confirm order | `PATCH /api/sales-orders/{id}/confirm` | Order `APPROVED`; RabbitMQ `sales.order.confirmed` (SKU/qty) |
+| 8 | Invoice | `POST /api/invoices` | Invoice `DRAFT` (`paidAmount=0`); order must be `APPROVED`+ |
+| 9 | Pay (full) | `POST /api/payments` | Payment `COMPLETED`; invoice → `PAID` |
+
+### Status cheat sheet
+
+| Entity | Field | Happy-path values | Notes |
+|--------|-------|-------------------|-------|
+| Lead | `status` | `NEW` → `QUALIFIED` → `CONVERTED` | Convert only from `QUALIFIED` |
+| Opportunity | `stage` | `NEW` (at convert) | Not required to close before quote |
+| Quotation | `status` | `DRAFT` → (`SENT`) → `ACCEPTED` | Accept allowed from `DRAFT` or `SENT` |
+| Sales order | `status` | `DRAFT` → `APPROVED` | Confirm publishes inventory event |
+| Invoice | `status` | `DRAFT` → `PAID` | Partial pay moves `DRAFT`/`SENT` → `PENDING` |
+| Payment | `status` | `COMPLETED` on create | Amount must be `> 0` and `≤` invoice balance |
+
+Transitions are enforced by `DomainStatusGuard`. Full request bodies and comments live in `test.http`.
+
 ## Security
 
 Mutating and sensitive CRM endpoints use `@PreAuthorize` role checks (`ADMIN`, `SALES_OFFICER`, `FINANCE_OFFICER`, `EMPLOYEE`).
@@ -136,6 +165,34 @@ Exchange: `erp.events` (topic)
 | Segments | `/api/segments` |
 | Audit | `/api/audit-trails` |
 | Dashboard / Analytics / Reports | `/api/dashboard`, `/api/analytics`, `/api/reports` |
+
+### Campaign lifecycle
+
+| Action | Endpoint | From → To |
+|--------|----------|-----------|
+| Activate | `PATCH /api/campaigns/{id}/activate` | `PLANNED` → `ACTIVE` |
+| Complete | `PATCH /api/campaigns/{id}/complete` | `ACTIVE` → `COMPLETED` |
+| Cancel | `PATCH /api/campaigns/{id}/cancel` | `PLANNED`/`ACTIVE` → `CANCELLED` |
+
+`actualLeads` increments when a lead is created with `campaignId`.  
+`actualRevenue` increments when a campaign-attributed opportunity reaches `CLOSED_WON`.  
+`CampaignScheduler` auto-activates by `startDate` and auto-completes by `endDate` daily.
+
+### Segment membership
+
+| Action | Endpoint |
+|--------|----------|
+| List members | `GET /api/segments/{id}/members` |
+| Add member | `POST /api/segments/{id}/members` `{ "customerId": N }` |
+| Remove member | `DELETE /api/segments/{id}/members/{customerId}` |
+| Evaluate criteria | `POST /api/segments/{id}/evaluate` |
+
+### API docs (SpringDoc)
+
+- Swagger UI: http://localhost:8082/swagger-ui.html  
+- OpenAPI JSON: http://localhost:8082/v3/api-docs  
+
+Also reachable via the gateway once routed. Use **Authorize** with a JWT from `/api/auth/login`.
 
 ## Architecture
 

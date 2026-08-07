@@ -9,7 +9,6 @@ import com.crm.crm_backend.dto.response.CustomerResponseDTO;
 import com.crm.crm_backend.dto.response.LeadResponseDTO;
 import com.crm.crm_backend.dto.response.OpportunityResponseDTO;
 import com.crm.crm_backend.event.publisher.LeadEventPublisher;
-import com.crm.crm_backend.exception.LeadConversionException;
 import com.crm.crm_backend.exception.LeadNotFoundException;
 import com.crm.crm_backend.mapper.LeadMapper;
 import com.crm.crm_backend.model.entity.Customer;
@@ -41,13 +40,17 @@ public class LeadService {
     private final CustomerService customerService;
     private final CustomerRepository customerRepository;
     private final OpportunityService opportunityService;
+    private final CampaignService campaignService;
     private final LeadScoreCalculator leadScoreCalculator;
     private final LeadEventPublisher leadEventPublisher;
+    private final com.crm.crm_backend.validator.LeadValidator leadValidator;
 
     @Transactional
     public LeadResponseDTO createLead(LeadCreateDTO dto) {
 
         log.info("Creating lead {}", dto.getEmail());
+
+        leadValidator.validateCreate(dto);
 
         if (dto.getEmail() != null &&
                 leadRepository.existsByEmail(dto.getEmail())) {
@@ -64,6 +67,10 @@ public class LeadService {
         );
 
         Lead saved = leadRepository.save(lead);
+
+        if (saved.getCampaignId() != null) {
+            campaignService.recordLeadAttributed(saved.getCampaignId());
+        }
 
         leadEventPublisher.publishLeadCreated(saved);
 
@@ -96,6 +103,8 @@ public class LeadService {
                 .orElseThrow(() ->
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
+
+        leadValidator.validateUpdate(lead, dto);
 
         leadMapper.updateEntityFromDTO(dto, lead);
 
@@ -160,16 +169,9 @@ public class LeadService {
                         new LeadNotFoundException(
                                 "Lead not found : " + id));
 
-        if (lead.getStatus() == LeadStatus.CONVERTED) {
-            throw new LeadConversionException("Lead is already converted.");
-        }
+        leadValidator.validateCanConvert(lead);
 
         DomainStatusGuard.assertLeadTransition(lead.getStatus(), LeadStatus.CONVERTED);
-
-        if (lead.getStatus() != LeadStatus.QUALIFIED) {
-            throw new LeadConversionException(
-                    "Lead must be QUALIFIED before conversion.");
-        }
 
         CustomerCreateDTO customerDTO =
                 buildCustomerFromLead(lead);

@@ -32,6 +32,7 @@ public class LeadResponseDTO {
     private Long campaignId;
     private String notes;
     private Long convertedCustomerId;
+    private Long convertedOpportunityId;
     private LocalDateTime convertedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SegmentMemberRepository
@@ -14,4 +15,12 @@ public interface SegmentMemberRepository
     List<SegmentMember> findBySegmentId(Long segmentId);
 
     List<SegmentMember> findByCustomerId(Long customerId);
+
+    boolean existsBySegmentIdAndCustomerId(Long segmentId, Long customerId);
+
+    Optional<SegmentMember> findBySegmentIdAndCustomerId(Long segmentId, Long customerId);
+
+    void deleteBySegmentId(Long segmentId);
+
+    long countBySegmentId(Long segmentId);
 }

@@ -66,3 +66,7 @@ management.info.env.enabled=true
 info.app.name=crm-backend
 info.app.description=INSA CRM microservice (JWT resource server)
 info.app.version=0.0.1-SNAPSHOT
+
+# SpringDoc OpenAPI
+springdoc.api-docs.path=/v3/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html

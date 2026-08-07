@@ -25,6 +25,7 @@ public interface LeadMapper {
     @Mapping(target = "deleted", ignore = true)
     Lead toEntity(LeadCreateDTO dto);
 
+    @Mapping(target = "convertedCustomerId", source = "convertedCustomer.id")
     LeadResponseDTO toResponseDTO(Lead entity);
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDTO(

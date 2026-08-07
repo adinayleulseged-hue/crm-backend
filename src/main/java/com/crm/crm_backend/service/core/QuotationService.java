@@ -44,8 +44,11 @@ public class QuotationService {
     private final SalesOrderRepository salesOrderRepository;
     private final QuotationMapper quotationMapper;
     private final SalesOrderMapper salesOrderMapper;
+    private final com.crm.crm_backend.validator.QuotationValidator quotationValidator;
 
     public QuotationResponseDTO createQuotation(QuotationCreateDTO dto) {
+
+        quotationValidator.validateCreate(dto);
 
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
@@ -127,6 +130,7 @@ public class QuotationService {
                     "Quotation already accepted and linked to a sales order");
         }
 
+        quotationValidator.validateCanAccept(quotation);
         DomainStatusGuard.assertQuotationTransition(quotation.getStatus(), QuotationStatus.ACCEPTED);
         quotation.setStatus(QuotationStatus.ACCEPTED);
         quotation.getItems().size();

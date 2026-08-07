@@ -25,6 +25,7 @@ public class                                                        CustomerServ
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;  // Now using manual mapper
     private final CustomerNumberGenerator customerNumberGenerator;
+    private final com.crm.crm_backend.validator.CustomerValidator customerValidator;
 
     @Override
     protected CustomerRepository getRepository() {
@@ -35,12 +36,15 @@ public class                                                        CustomerServ
     public CustomerResponseDTO createCustomer(CustomerCreateDTO dto) {
         log.info("Creating new customer with email: {}", dto.getEmail());
 
+        customerValidator.validateCreate(dto);
+
         if (customerRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateEntityException("Customer with email " + dto.getEmail() + " already exists");
         }
 
         Customer customer = customerMapper.toEntity(dto);
         customer.setCustomerNumber(customerNumberGenerator.generate());
+        customerValidator.validateAmounts(customer);
 
         Customer saved = customerRepository.save(customer);
         log.info("Customer created with ID: {}", saved.getId());
@@ -69,12 +73,15 @@ public class                                                        CustomerServ
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
 
+        customerValidator.validateUpdate(customer, dto);
+
         if (!customer.getEmail().equals(dto.getEmail()) &&
                 customerRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateEntityException("Email " + dto.getEmail() + " already in use");
         }
 
         customerMapper.updateEntity(dto, customer);
+        customerValidator.validateAmounts(customer);
         Customer updated = customerRepository.save(customer);
 
         log.info("Customer updated with ID: {}", updated.getId());

@@ -31,6 +31,7 @@ public class OpportunityService {
     private final OpportunityMapper opportunityMapper;
     private final CustomerRepository customerRepository;
     private final LeadRepository leadRepository;
+    private final CampaignService campaignService;
 
     public OpportunityResponseDTO createOpportunity(OpportunityCreateDTO dto) {
 
@@ -119,6 +120,16 @@ public class OpportunityService {
         }
 
         Opportunity updated = opportunityRepository.save(opportunity);
+
+        if (stage == OpportunityStage.CLOSED_WON) {
+            Lead lead = updated.getLead();
+            if (lead != null && lead.getCampaignId() != null) {
+                java.math.BigDecimal revenue = updated.getExpectedRevenue() != null
+                        ? updated.getExpectedRevenue()
+                        : java.math.BigDecimal.ZERO;
+                campaignService.recordRevenueFromConversion(lead.getCampaignId(), revenue);
+            }
+        }
 
         return opportunityMapper.toResponseDTO(updated);
     }
