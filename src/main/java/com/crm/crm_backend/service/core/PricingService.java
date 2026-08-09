@@ -142,7 +142,8 @@ public class PricingService {
 
     private BigDecimal computeAdjustment(PricingRule rule, BigDecimal base) {
         BigDecimal adjustment;
-        if (rule.getRuleType() == PricingRuleType.PERCENTAGE_DISCOUNT) {
+        if (rule.getRuleType() == PricingRuleType.PERCENTAGE_DISCOUNT
+                || rule.getRuleType() == PricingRuleType.DISCOUNT) {
             adjustment = base.multiply(rule.getValue())
                     .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)
                     .negate();
