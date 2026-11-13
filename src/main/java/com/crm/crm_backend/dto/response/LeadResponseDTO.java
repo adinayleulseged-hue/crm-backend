@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Data
 public class LeadResponseDTO {
     private Long id;
+    private String leadNumber;
     private String firstName;
     private String lastName;
     private String middleName;

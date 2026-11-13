@@ -33,20 +33,24 @@ public class LeadEventPublisher {
     }
 
     private void publish(String routingKey, Lead lead) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("leadId", lead.getId());
-        data.put("email", lead.getEmail());
-        data.put("status", lead.getStatus() != null ? lead.getStatus().name() : null);
-        data.put("assignedTo", lead.getAssignedTo());
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("leadId", lead.getId());
+            data.put("email", lead.getEmail());
+            data.put("status", lead.getStatus() != null ? lead.getStatus().name() : null);
+            data.put("assignedTo", lead.getAssignedTo());
 
-        DomainEventMessage message = DomainEventMessage.builder()
-                .eventName(routingKey)
-                .source("crm-backend")
-                .occurredAt(LocalDateTime.now())
-                .data(data)
-                .build();
+            DomainEventMessage message = DomainEventMessage.builder()
+                    .eventName(routingKey)
+                    .source("crm-backend")
+                    .occurredAt(LocalDateTime.now())
+                    .data(data)
+                    .build();
 
-        rabbitTemplate.convertAndSend(CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE, routingKey, message);
-        log.info("Published event {} for lead {}", routingKey, lead.getId());
+            rabbitTemplate.convertAndSend(CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE, routingKey, message);
+            log.info("Published event {} for lead {}", routingKey, lead.getId());
+        } catch (Exception e) {
+            log.warn("Failed to publish event {} for lead {}: {}", routingKey, lead != null ? lead.getId() : null, e.getMessage());
+        }
     }
 }

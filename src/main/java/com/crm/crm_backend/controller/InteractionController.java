@@ -22,7 +22,7 @@ public class InteractionController {
     private final InteractionService interactionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<InteractionResponseDTO>> createInteraction(
             @Valid @RequestBody InteractionCreateDTO dto) {
 
@@ -31,7 +31,7 @@ public class InteractionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<InteractionResponseDTO>> getInteraction(
             @PathVariable Long id) {
 
@@ -39,7 +39,7 @@ public class InteractionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<InteractionResponseDTO>>> getAllInteractions(
             Pageable pageable) {
 
@@ -47,7 +47,7 @@ public class InteractionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<InteractionResponseDTO>> updateInteraction(
             @PathVariable Long id,
             @Valid @RequestBody InteractionUpdateDTO dto) {
@@ -56,7 +56,7 @@ public class InteractionController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteInteraction(
             @PathVariable Long id) {
 

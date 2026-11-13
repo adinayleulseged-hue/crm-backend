@@ -17,9 +17,6 @@ public class SalesOrderValidator {
         if (dto.getCustomerId() == null) {
             throw new IllegalStateException("Customer ID is required");
         }
-        if (dto.getOpportunityId() == null) {
-            throw new IllegalStateException("Opportunity ID is required");
-        }
         validateDates(dto.getOrderDate(), dto.getDeliveryDate());
         validateItems(dto.getItems());
     }

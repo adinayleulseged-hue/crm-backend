@@ -7,5 +7,7 @@ public enum UserRole {
     INVENTORY_OFFICER,
     SALES_OFFICER,
     FINANCE_OFFICER,
-    EMPLOYEE
+    EMPLOYEE,
+    AUDITOR,
+    SALES_MANAGER
 }

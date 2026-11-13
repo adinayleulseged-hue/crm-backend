@@ -60,14 +60,18 @@ public class OrderEventPublisher {
     }
 
     private void publish(String routingKey, Map<String, Object> data) {
-        DomainEventMessage message = DomainEventMessage.builder()
-                .eventName(routingKey)
-                .source("crm-backend")
-                .occurredAt(LocalDateTime.now())
-                .data(data)
-                .build();
+        try {
+            DomainEventMessage message = DomainEventMessage.builder()
+                    .eventName(routingKey)
+                    .source("crm-backend")
+                    .occurredAt(LocalDateTime.now())
+                    .data(data)
+                    .build();
 
-        rabbitTemplate.convertAndSend(CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE, routingKey, message);
-        log.info("Published event {} for order {}", routingKey, data.get("orderNumber"));
+            rabbitTemplate.convertAndSend(CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE, routingKey, message);
+            log.info("Published event {} for order {}", routingKey, data.get("orderNumber"));
+        } catch (Exception e) {
+            log.warn("Failed to publish event {} for order {}: {}", routingKey, data.get("orderNumber"), e.getMessage());
+        }
     }
 }

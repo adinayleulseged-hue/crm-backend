@@ -1,8 +1,10 @@
 package com.crm.crm_backend.model.entity;
 
+import com.crm.crm_backend.model.Product;
 import com.crm.crm_backend.model.enums.LeadSource;
 import com.crm.crm_backend.model.enums.OpportunityStage;
 import com.crm.crm_backend.model.enums.OpportunityType;
+import com.crm.crm_backend.model.enums.WorkflowStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -76,6 +78,77 @@ public class Opportunity {
     @Column(name = "active")
     private Boolean active = true;
 
+    @Column(name = "quotation_generated")
+    @Builder.Default
+    private Boolean quotationGenerated = false;
+
+    // ===== Workflow fields =====
+    @Enumerated(EnumType.STRING)
+    @Column(name = "workflow_status", length = 50)
+    @Builder.Default
+    private WorkflowStatus workflowStatus = WorkflowStatus.DRAFT;
+
+    // Approval tracking
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "rejected_by")
+    private Long rejectedBy;
+
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    // Linked entities
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private SalesOrder order;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invoice_id")
+    private Invoice invoice;
+
+    // Closure tracking
+    @Column(name = "closed_by")
+    private Long closedBy;
+
+    @Column(name = "closed_at")
+    private LocalDateTime closedAt;
+
+    @Column(name = "close_notes", length = 1000)
+    private String closeNotes;
+
+    // Permissions
+    @Column(name = "customer_can_close")
+    @Builder.Default
+    private Boolean customerCanClose = false;
+
+    // Discount fields
+    @Column(name = "discount_requested", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal discountRequested = BigDecimal.ZERO;
+
+    @Column(name = "discount_approved", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal discountApproved = BigDecimal.ZERO;
+
+    // Product details
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @Column(name = "quantity")
+    @Builder.Default
+    private Integer quantity = 1;
+
+    @Column(name = "unit_price", precision = 15, scale = 2)
+    private BigDecimal unitPrice;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -93,6 +166,26 @@ public class Opportunity {
 
         if (active == null) {
             active = true;
+        }
+
+        if (workflowStatus == null) {
+            workflowStatus = WorkflowStatus.DRAFT;
+        }
+
+        if (customerCanClose == null) {
+            customerCanClose = false;
+        }
+
+        if (discountRequested == null) {
+            discountRequested = BigDecimal.ZERO;
+        }
+
+        if (discountApproved == null) {
+            discountApproved = BigDecimal.ZERO;
+        }
+
+        if (quantity == null) {
+            quantity = 1;
         }
     }
 

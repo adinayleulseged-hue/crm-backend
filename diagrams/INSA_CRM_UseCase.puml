@@ -1,0 +1,389 @@
+@startuml INSA_CRM_Complete_Use_Cases
+
+!define RECTANGLE
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor Black
+}
+
+title INSA CRM System - Complete Use Case Diagram with Campaign Management
+
+left to right direction
+
+' ========================================
+' ACTORS
+' ========================================
+actor "Public Visitor" as Visitor #LightGreen
+actor "Customer" as Customer #LightYellow
+actor "Sales Officer" as SalesOfficer #LightCyan
+actor "Sales Manager" as SalesManager #LightCoral
+actor "Marketing Manager" as Marketing #Pink
+actor "Finance Officer" as Finance #Gold
+actor "Auditor" as Auditor #LightGray
+actor "Admin" as Admin #Red
+actor "Email System" as EmailSystem #White
+
+' ========================================
+' SYSTEM BOUNDARY
+' ========================================
+rectangle "INSA CRM System" #AliceBlue {
+  
+  ' ========================================
+  ' PUBLIC PORTAL USE CASES
+  ' ========================================
+  package "Public Portal" #LightGreen {
+    usecase "Submit Lead Inquiry\n(UC1)" as UC1 #PaleGreen
+    usecase "View Products Catalog\n(UC2)" as UC2 #PaleGreen
+    usecase "Submit Contact Form\n(UC3)" as UC3 #PaleGreen
+    usecase "Subscribe to Newsletter\n(UC4)" as UC4 #PaleGreen
+  }
+
+  ' ========================================
+  ' AUTHENTICATION (CORE)
+  ' ========================================
+  package "Authentication" #LightCoral {
+    usecase "Login to System\n(UC_Login)" as UC_Login #MistyRose
+    usecase "Validate Credentials\n(UC_ValidateCreds)" as UC_ValidateCreds #MistyRose
+    usecase "Generate JWT Token\n(UC_GenerateToken)" as UC_GenerateToken #MistyRose
+    usecase "Logout from System\n(UC_Logout)" as UC_Logout #MistyRose
+  }
+
+  ' ========================================
+  ' CUSTOMER PORTAL
+  ' ========================================
+  package "Customer Portal" #LightYellow {
+    usecase "View Own Orders\n(UC10)" as UC10 #LemonChiffon
+    usecase "Track Order Status\n(UC11)" as UC11 #LemonChiffon
+    usecase "View Own Invoices\n(UC12)" as UC12 #LemonChiffon
+    usecase "Make Payment\n(UC13)" as UC13 #LemonChiffon
+    usecase "Download Invoice PDF\n(UC14)" as UC14 #LemonChiffon
+    usecase "Submit Sales Inquiry\n(UC15)" as UC15 #LemonChiffon
+    usecase "View Products\n(UC16)" as UC16 #LemonChiffon
+    usecase "Chat with Support\n(UC17)" as UC17 #LemonChiffon
+    usecase "View Order History\n(UC18)" as UC18 #LemonChiffon
+  }
+
+  ' ========================================
+  ' LEAD MANAGEMENT
+  ' ========================================
+  package "Lead Management" #LightCyan {
+    usecase "View All Leads\n(UC20)" as UC20 #PaleTurquoise
+    usecase "Create New Lead\n(UC21)" as UC21 #PaleTurquoise
+    usecase "Edit Lead\n(UC22E)" as UC22E #PaleTurquoise
+    usecase "Qualify Lead\n(UC22)" as UC22 #PaleTurquoise
+    usecase "Disqualify Lead\n(UC23)" as UC23 #PaleTurquoise
+    usecase "Provide Qualification Reason\n(UC24)" as UC24 #Aquamarine
+    usecase "Provide Disqualification Reason\n(UC25)" as UC25 #Aquamarine
+    usecase "Convert Lead to Customer\n(UC26)" as UC26 #PaleTurquoise
+    usecase "Assign Lead to Rep\n(UC27)" as UC27 #PaleTurquoise
+    usecase "Send Notification Email\n(UC_EmailNotif)" as UC_EmailNotif #LightBlue
+  }
+
+  ' ========================================
+  ' CAMPAIGN MANAGEMENT (NEW!)
+  ' ========================================
+  package "Campaign Management" #Pink {
+    usecase "View All Campaigns\n(UC80)" as UC80 #LightPink
+    usecase "Create Campaign\n(UC81)" as UC81 #LightPink
+    usecase "Edit Campaign\n(UC82)" as UC82 #LightPink
+    usecase "Launch Campaign\n(UC83)" as UC83 #LightPink
+    usecase "Pause Campaign\n(UC84)" as UC84 #LightPink
+    usecase "Close Campaign\n(UC85)" as UC85 #LightPink
+    usecase "Define Target Audience\n(UC86)" as UC86 #HotPink
+    usecase "Set Campaign Budget\n(UC87)" as UC87 #HotPink
+    usecase "Schedule Campaign\n(UC88)" as UC88 #HotPink
+    usecase "Track Campaign Performance\n(UC89)" as UC89 #LightPink
+    usecase "Generate Campaign Report\n(UC90)" as UC90 #LightPink
+    usecase "Send Bulk Email\n(UC91)" as UC91 #HotPink
+    usecase "Track Email Opens\n(UC92)" as UC92 #HotPink
+    usecase "Track Click Rates\n(UC93)" as UC93 #HotPink
+    usecase "Assign Leads to Campaign\n(UC94)" as UC94 #LightPink
+  }
+
+  ' ========================================
+  ' SALES & OPPORTUNITY MANAGEMENT
+  ' ========================================
+  package "Sales Management" #Coral {
+    usecase "View Sales Deals\n(UC30)" as UC30 #LightCoral
+    usecase "Create Sales Deal\n(UC31)" as UC31 #LightCoral
+    usecase "Edit Sales Deal\n(UC32)" as UC32 #LightCoral
+    usecase "Approve Sales Deal\n(UC33)" as UC33 #LightCoral
+    usecase "Reject Sales Deal\n(UC34)" as UC34 #LightCoral
+    usecase "Apply Discount\n(UC35)" as UC35 #Salmon
+    usecase "Generate Quotation\n(UC36)" as UC36 #Salmon
+    usecase "Validate Deal Amount\n(UC_ValidateAmount)" as UC_ValidateAmount #Salmon
+    usecase "Track Deal Progress\n(UC37)" as UC37 #LightCoral
+  }
+
+  ' ========================================
+  ' CUSTOMER MANAGEMENT
+  ' ========================================
+  package "Customer Management" #Wheat {
+    usecase "View Customers\n(UC40)" as UC40 #Khaki
+    usecase "Create Customer\n(UC41)" as UC41 #Khaki
+    usecase "Invite Customer\n(UC42)" as UC42 #Khaki
+    usecase "Generate Temp Password\n(UC43)" as UC43 #BurlyWood
+    usecase "Send Invitation Email\n(UC44)" as UC44 #BurlyWood
+    usecase "Edit Customer Info\n(UC45)" as UC45 #Khaki
+    usecase "Delete Customer\n(UC46)" as UC46 #Khaki
+  }
+
+  ' ========================================
+  ' FINANCIAL MANAGEMENT
+  ' ========================================
+  package "Financial Management" #Gold {
+    usecase "View Invoices\n(UC50)" as UC50 #LightGoldenrodYellow
+    usecase "Create Invoice\n(UC51)" as UC51 #LightGoldenrodYellow
+    usecase "Approve Invoice\n(UC52)" as UC52 #LightGoldenrodYellow
+    usecase "Process Payment\n(UC53)" as UC53 #LightGoldenrodYellow
+    usecase "View Payment History\n(UC54)" as UC54 #LightGoldenrodYellow
+    usecase "Generate Financial Report\n(UC55)" as UC55 #LightGoldenrodYellow
+    usecase "Validate Payment Method\n(UC_ValidatePayment)" as UC_ValidatePayment #Goldenrod
+    usecase "Send Payment Receipt\n(UC56)" as UC56 #Goldenrod
+    usecase "Reconcile Accounts\n(UC57)" as UC57 #LightGoldenrodYellow
+  }
+
+  ' ========================================
+  ' SYSTEM ADMINISTRATION
+  ' ========================================
+  package "Administration" #Tomato {
+    usecase "Manage Users\n(UC60)" as UC60 #LightSalmon
+    usecase "Create User Account\n(UC61)" as UC61 #LightSalmon
+    usecase "Auto-Generate Password\n(UC62)" as UC62 #DarkSalmon
+    usecase "Send User Credentials\n(UC63)" as UC63 #DarkSalmon
+    usecase "Change User Role\n(UC64)" as UC64 #LightSalmon
+    usecase "Delete User\n(UC65)" as UC65 #LightSalmon
+    usecase "View Audit Logs\n(UC66)" as UC66 #LightSalmon
+    usecase "View System Status\n(UC67)" as UC67 #LightSalmon
+  }
+
+  ' ========================================
+  ' AUDIT & COMPLIANCE
+  ' ========================================
+  package "Audit & Compliance" #Silver {
+    usecase "View All System Logs\n(UC70)" as UC70 #Gainsboro
+    usecase "View User Activities\n(UC71)" as UC71 #Gainsboro
+    usecase "Generate Audit Report\n(UC72)" as UC72 #Gainsboro
+    usecase "Export Audit Data\n(UC73)" as UC73 #Gainsboro
+    usecase "Monitor System Health\n(UC74)" as UC74 #DarkGray
+  }
+}
+
+' ========================================
+' ACTOR RELATIONSHIPS
+' ========================================
+
+' Public Visitor
+Visitor --> UC1
+Visitor --> UC2
+Visitor --> UC3
+Visitor --> UC4
+
+' Customer
+Customer --> UC_Login
+Customer --> UC10
+Customer --> UC11
+Customer --> UC12
+Customer --> UC13
+Customer --> UC14
+Customer --> UC15
+Customer --> UC16
+Customer --> UC17
+Customer --> UC18
+
+' Sales Officer
+SalesOfficer --> UC_Login
+SalesOfficer --> UC20
+SalesOfficer --> UC21
+SalesOfficer --> UC22E
+SalesOfficer --> UC22
+SalesOfficer --> UC23
+SalesOfficer --> UC27
+SalesOfficer --> UC30
+SalesOfficer --> UC31
+SalesOfficer --> UC32
+SalesOfficer --> UC40
+SalesOfficer --> UC41
+SalesOfficer --> UC45
+
+' Sales Manager
+SalesManager --> UC_Login
+SalesManager --> UC20
+SalesManager --> UC21
+SalesManager --> UC22
+SalesManager --> UC23
+SalesManager --> UC26
+SalesManager --> UC27
+SalesManager --> UC30
+SalesManager --> UC31
+SalesManager --> UC32
+SalesManager --> UC33
+SalesManager --> UC34
+SalesManager --> UC37
+SalesManager --> UC40
+SalesManager --> UC41
+SalesManager --> UC42
+SalesManager --> UC45
+
+' Marketing Manager (NEW!)
+Marketing --> UC_Login
+Marketing --> UC80
+Marketing --> UC81
+Marketing --> UC82
+Marketing --> UC83
+Marketing --> UC84
+Marketing --> UC85
+Marketing --> UC89
+Marketing --> UC90
+Marketing --> UC94
+Marketing --> UC20
+
+' Finance Officer
+Finance --> UC_Login
+Finance --> UC50
+Finance --> UC51
+Finance --> UC52
+Finance --> UC53
+Finance --> UC54
+Finance --> UC55
+Finance --> UC57
+
+' Auditor
+Auditor --> UC_Login
+Auditor --> UC66
+Auditor --> UC70
+Auditor --> UC71
+Auditor --> UC72
+Auditor --> UC73
+Auditor --> UC74
+
+' Admin
+Admin --> UC_Login
+Admin --> UC60
+Admin --> UC61
+Admin --> UC64
+Admin --> UC65
+Admin --> UC66
+Admin --> UC67
+Admin --> UC20
+Admin --> UC22
+Admin --> UC23
+Admin --> UC30
+Admin --> UC33
+Admin --> UC34
+Admin --> UC40
+Admin --> UC42
+Admin --> UC50
+Admin --> UC52
+Admin --> UC80
+Admin --> UC81
+
+' Email System (External)
+EmailSystem --> UC_EmailNotif
+EmailSystem --> UC44
+EmailSystem --> UC63
+EmailSystem --> UC56
+EmailSystem --> UC91
+
+' ========================================
+' <<INCLUDE>> RELATIONSHIPS (MANDATORY)
+' ========================================
+
+' Authentication always required
+UC10 .up.> UC_Login : <<include>>
+UC20 .up.> UC_Login : <<include>>
+UC30 .up.> UC_Login : <<include>>
+UC40 .up.> UC_Login : <<include>>
+UC50 .up.> UC_Login : <<include>>
+UC60 .up.> UC_Login : <<include>>
+UC70 .up.> UC_Login : <<include>>
+UC80 .up.> UC_Login : <<include>>
+
+' Login process steps
+UC_Login .right.> UC_ValidateCreds : <<include>>
+UC_ValidateCreds .right.> UC_GenerateToken : <<include>>
+
+' Lead qualification always sends email
+UC22 ..> UC_EmailNotif : <<include>>
+UC23 ..> UC_EmailNotif : <<include>>
+
+' User creation always generates password
+UC61 ..> UC62 : <<include>>
+UC61 ..> UC63 : <<include>>
+
+' Customer invitation always includes
+UC42 ..> UC43 : <<include>>
+UC42 ..> UC44 : <<include>>
+
+' Payment always validates
+UC53 ..> UC_ValidatePayment : <<include>>
+
+' Deal approval/rejection always notifies
+UC33 ..> UC_EmailNotif : <<include>>
+UC34 ..> UC_EmailNotif : <<include>>
+
+' Campaign creation always defines audience
+UC81 ..> UC86 : <<include>>
+
+' Campaign launch always sends emails
+UC83 ..> UC91 : <<include>>
+
+' ========================================
+' <<EXTEND>> RELATIONSHIPS (OPTIONAL)
+' ========================================
+
+' Optional qualification reason
+UC24 .up.> UC22 : <<extend>>
+
+' Optional disqualification reason
+UC25 .up.> UC23 : <<extend>>
+
+' Optional discount on approval
+UC35 .up.> UC33 : <<extend>>
+
+' Optional quotation generation
+UC36 .up.> UC31 : <<extend>>
+
+' Optional payment receipt
+UC56 .up.> UC53 : <<extend>>
+
+' Optional PDF download
+UC14 .up.> UC12 : <<extend>>
+
+' Optional amount validation
+UC_ValidateAmount .up.> UC51 : <<extend>>
+
+' Optional system health monitoring
+UC74 .up.> UC67 : <<extend>>
+
+' Optional campaign budget setting
+UC87 .up.> UC81 : <<extend>>
+
+' Optional campaign scheduling
+UC88 .up.> UC83 : <<extend>>
+
+' Optional email tracking
+UC92 .up.> UC91 : <<extend>>
+UC93 .up.> UC91 : <<extend>>
+
+note right of UC_EmailNotif
+  Handles all system 
+  email notifications
+end note
+
+note bottom of UC_Login
+  JWT-based authentication
+  with role validation
+end note
+
+note right of UC81
+  Campaigns can be:
+  - Email Marketing
+  - Lead Generation
+  - Product Launch
+end note
+
+@enduml

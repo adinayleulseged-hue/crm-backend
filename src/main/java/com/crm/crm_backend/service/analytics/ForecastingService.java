@@ -33,7 +33,9 @@ public class ForecastingService {
     private final KpiCalculatorService kpiCalculatorService;
 
     public BigDecimal currentRevenue() {
-        return kpiCalculatorService.coalesce(paymentRepository.sumCompletedAmount());
+        // TODO: Implement sumCompletedAmount in PaymentRepository
+        // return kpiCalculatorService.coalesce(paymentRepository.sumCompletedAmount());
+        return BigDecimal.ZERO; // Placeholder until payment sum query is implemented
     }
 
     /**

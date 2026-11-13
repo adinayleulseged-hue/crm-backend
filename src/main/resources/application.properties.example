@@ -5,11 +5,11 @@ server.port=${SERVER_PORT:8082}
 # application.properties is gitignored — do not commit secrets.
 #
 # Neon shared team database (pooled JDBC):
-# jdbc:postgresql://<host>/<database>?sslmode=require&prepareThreshold=0
+# jdbc:postgresql://<host>/<database>?sslmode=disable&prepareThreshold=0
 #
 # You can also override with env vars: DB_URL, DB_USER, DB_PASSWORD
 
-spring.datasource.url=${DB_URL:jdbc:postgresql://YOUR_NEON_HOST/neondb?sslmode=require&prepareThreshold=0}
+spring.datasource.url=${DB_URL:jdbc:postgresql://YOUR_NEON_HOST/neondb?sslmode=disable&prepareThreshold=0}
 spring.datasource.username=${DB_USER:neondb_owner}
 spring.datasource.password=${DB_PASSWORD:YOUR_NEON_PASSWORD}
 
@@ -79,6 +79,9 @@ spring.mail.password=${SMTP_PASSWORD:}
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.starttls.required=true
+
+# Frontend URL (for invitation links)
+app.frontend.url=${FRONTEND_URL:http://localhost:3000}
 
 # Actuator / Observability
 management.endpoints.web.exposure.include=health,info,prometheus

@@ -3,6 +3,8 @@ package com.crm.crm_backend.repository;
 
 import com.crm.crm_backend.model.entity.Invoice;
 import com.crm.crm_backend.model.enums.InvoiceStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -23,6 +25,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
     boolean existsByInvoiceNumber(String invoiceNumber);
 
     List<Invoice> findByStatus(InvoiceStatus status);
+
+    Page<Invoice> findByStatus(InvoiceStatus status, Pageable pageable);
 
     List<Invoice> findByCustomerId(Long customerId);
 

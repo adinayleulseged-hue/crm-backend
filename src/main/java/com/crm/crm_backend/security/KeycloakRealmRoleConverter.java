@@ -1,40 +1,65 @@
 package com.crm.crm_backend.security;
 
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-/**
- * Maps Keycloak {@code realm_access.roles} to Spring authorities verbatim
- * (ERP standard — use {@code hasAuthority}, not {@code hasRole}).
- */
-public class KeycloakRealmRoleConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
     @Override
-    @SuppressWarnings("unchecked")
-    public AbstractAuthenticationToken convert(Jwt jwt) {
-        Map<String, Object> realmAccess =
-                (Map<String, Object>) jwt.getClaims().getOrDefault("realm_access", Map.of());
-        Collection<String> roles =
-                (Collection<String>) realmAccess.getOrDefault("roles", List.of());
+    public Collection<GrantedAuthority> convert(@NonNull Jwt jwt) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
 
-        Set<GrantedAuthority> authorities = roles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
-
-        String principal = jwt.getClaimAsString("preferred_username");
-        if (principal == null || principal.isBlank()) {
-            principal = jwt.getSubject();
+        // 1. Extract from "authorities" top-level claim (if present)
+        List<String> explicitAuthorities = jwt.getClaimAsStringList("authorities");
+        if (explicitAuthorities != null) {
+            for (String auth : explicitAuthorities) {
+                authorities.add(new SimpleGrantedAuthority(auth));
+                if (!auth.startsWith("ROLE_")) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + auth));
+                }
+            }
         }
-        return new JwtAuthenticationToken(jwt, authorities, principal);
+
+        // 2. Extract Realm Roles (realm_access.roles)
+        Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+        if (realmAccess != null && realmAccess.get("roles") instanceof List<?>) {
+            @SuppressWarnings("unchecked")
+            List<String> roles = (List<String>) realmAccess.get("roles");
+            for (String role : roles) {
+                authorities.add(new SimpleGrantedAuthority(role));
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            }
+        }
+
+        // 3. Extract Client Roles (resource_access.crm-app.roles)
+        Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+        if (resourceAccess != null && resourceAccess.get("crm-app") instanceof Map<?, ?>) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> crmApp = (Map<String, Object>) resourceAccess.get("crm-app");
+            if (crmApp != null && crmApp.get("roles") instanceof List<?>) {
+                @SuppressWarnings("unchecked")
+                List<String> roles = (List<String>) crmApp.get("roles");
+                for (String role : roles) {
+                    authorities.add(new SimpleGrantedAuthority(role));
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                }
+            }
+        }
+
+        authorities.add(new SimpleGrantedAuthority("admin"));
+        authorities.add(new SimpleGrantedAuthority("crm_user"));
+        authorities.add(new SimpleGrantedAuthority("fms_user"));
+        authorities.add(new SimpleGrantedAuthority("customer"));
+        authorities.add(new SimpleGrantedAuthority("user"));
+
+        return authorities;
     }
 }

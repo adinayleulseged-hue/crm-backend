@@ -2,38 +2,38 @@ package com.crm.crm_backend.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.security.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class OpenApiConfig {
 
     @Bean
+    @Primary
     public OpenAPI crmOpenApi() {
-        final String bearer = "bearerAuth";
         return new OpenAPI()
-                .info(new Info()
-                        .title("INSA CRM API")
-                        .description("CRM microservice contracts for the sales pipeline, "
-                                + "campaigns, segments, invoicing, and payments.")
-                        .version("0.0.1")
-                        .contact(new Contact().name("INSA CRM").email("ops@crm.local")))
-                .servers(List.of(
-                        new Server().url("http://localhost:8080").description("API Gateway"),
-                        new Server().url("http://localhost:8082").description("CRM direct")))
-                .addSecurityItem(new SecurityRequirement().addList(bearer))
-                .components(new Components().addSecuritySchemes(bearer,
-                        new SecurityScheme()
-                                .name(bearer)
+                .components(new Components()
+                        // 1. Direct Bearer Token Input Field
+                        .addSecuritySchemes("BearerToken", new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
-                                .bearerFormat("JWT")));
+                                .bearerFormat("JWT")
+                                .description("Paste access token directly here (without 'Bearer ' prefix)"))
+
+                        // 2. Keycloak OAuth2 Login Flow (Client ID, Secret, Username, Password)
+                        .addSecuritySchemes("KeycloakOAuth2", new SecurityScheme()
+                                .type(SecurityScheme.Type.OAUTH2)
+                                .flows(new OAuthFlows()
+                                        .password(new OAuthFlow()
+                                                .tokenUrl("http://localhost:8080/realms/erp/protocol/openid-connect/token")
+                                        )
+                                )
+                        )
+                )
+                .addSecurityItem(new SecurityRequirement()
+                        .addList("BearerToken")
+                        .addList("KeycloakOAuth2"));
     }
 }

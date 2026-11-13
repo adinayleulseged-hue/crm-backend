@@ -19,6 +19,9 @@ import java.time.LocalDateTime;
 @Table(name = "crm_leads")
 public class Lead extends BaseEntity {
 
+    @Column(name = "lead_number", nullable = false, unique = true, length = 30)
+    private String leadNumber;
+
     private String firstName;
     private String lastName;
     private String middleName;
@@ -76,6 +79,16 @@ public class Lead extends BaseEntity {
     private Long convertedOpportunityId;
     private LocalDateTime convertedAt;
     private String conversionReason;
+
+    // Qualification tracking
+    private Long qualifiedBy;
+    private LocalDateTime qualifiedAt;
+    
+    @Column(length = 1000)
+    private String qualificationReason;
+    
+    @Column(length = 1000)
+    private String disqualificationReason;
 
     private String dataClassification = "CONFIDENTIAL";
     private String securityClearance = "LEVEL_1";

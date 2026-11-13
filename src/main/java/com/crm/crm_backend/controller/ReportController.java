@@ -18,7 +18,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/export.csv")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<String> exportReportCsv() {
         String csv = reportService.exportReportCsv();
         return ResponseEntity.ok()
@@ -28,7 +28,7 @@ public class ReportController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<ReportResponseDTO>> generateReport() {
 
         return ResponseEntity.ok(ApiResponse.success(reportService.generateReport()));

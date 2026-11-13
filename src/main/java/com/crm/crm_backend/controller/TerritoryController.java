@@ -23,7 +23,7 @@ public class TerritoryController {
     private final TerritoryService territoryService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<TerritoryResponseDTO>> createTerritory(
             @Valid @RequestBody TerritoryRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -31,25 +31,25 @@ public class TerritoryController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<List<TerritoryResponseDTO>>> getActiveTerritories() {
         return ResponseEntity.ok(ApiResponse.success(territoryService.getActiveTerritories()));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<TerritoryResponseDTO>> getTerritory(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(territoryService.getTerritory(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<TerritoryResponseDTO>>> getAllTerritories(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(territoryService.getAllTerritories(pageable)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<TerritoryResponseDTO>> updateTerritory(
             @PathVariable Long id,
             @Valid @RequestBody TerritoryRequestDTO dto) {
@@ -59,7 +59,7 @@ public class TerritoryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteTerritory(@PathVariable Long id) {
         territoryService.deleteTerritory(id);
         return ResponseEntity.ok(ApiResponse.success("Territory deleted", null));

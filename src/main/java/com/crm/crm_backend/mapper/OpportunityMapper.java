@@ -27,6 +27,9 @@ public interface OpportunityMapper {
 
     @Mapping(target = "leadId", source = "lead.id")
     @Mapping(target = "customerId", source = "customer.id")
+    @Mapping(target = "orderId", source = "order.id")
+    @Mapping(target = "invoiceId", source = "invoice.id")
+    @Mapping(target = "productId", source = "product.id")
     OpportunityResponseDTO toResponseDTO(Opportunity entity);
 
     @BeanMapping(

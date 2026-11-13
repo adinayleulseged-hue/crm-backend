@@ -2,6 +2,7 @@ package com.crm.crm_backend.service.core;
 
 import com.crm.crm_backend.common.BaseService;
 import com.crm.crm_backend.dto.request.CustomerCreateDTO;
+import com.crm.crm_backend.dto.request.CustomerProfileUpdateDTO;
 import com.crm.crm_backend.dto.request.CustomerUpdateDTO;
 import com.crm.crm_backend.dto.response.CustomerResponseDTO;
 import com.crm.crm_backend.exception.CustomerNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -28,6 +30,8 @@ import java.time.LocalDate;
 public class CustomerService extends BaseService<Customer, Long> {
 
     private final CustomerRepository customerRepository;
+    private final com.crm.crm_backend.repository.UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final CustomerMapper customerMapper;
     private final CustomerNumberGenerator customerNumberGenerator;
     private final com.crm.crm_backend.validator.CustomerValidator customerValidator;
@@ -125,6 +129,117 @@ public class CustomerService extends BaseService<Customer, Long> {
         customerRepository.save(customer);
 
         log.info("Customer soft-deleted with ID: {}", id);
+    }
+
+    @Transactional
+    public CustomerResponseDTO getProfile(String usernameOrEmail) {
+        log.info("Fetching profile for user/customer: {}", usernameOrEmail);
+        
+        // 1. Try finding User by username or email
+        com.crm.crm_backend.model.entity.User user = userRepository.findByUsername(usernameOrEmail)
+                .or(() -> userRepository.findByEmail(usernameOrEmail))
+                .orElse(null);
+
+        String emailToSearch = user != null ? user.getEmail() : usernameOrEmail;
+
+        // 2. Find Customer by email or fallback to customer id if user exists
+        Customer customer = customerRepository.findByEmail(emailToSearch)
+                .or(() -> user != null ? customerRepository.findByIdAndDeletedFalse(user.getId()) : java.util.Optional.empty())
+                .orElse(null);
+
+        if (customer != null) {
+            return customerMapper.toResponseDTO(customer);
+        }
+
+        // 3. If customer record does not exist yet for this user, auto-provision one
+        Customer newCustomer = new Customer();
+        newCustomer.setCustomerNumber(customerNumberGenerator.generate());
+        newCustomer.setEmail(emailToSearch);
+        newCustomer.setFirstName(user != null ? user.getUsername() : usernameOrEmail);
+        newCustomer.setCompanyName((user != null ? user.getUsername() : usernameOrEmail) + " Organization");
+        newCustomer.setStatus(com.crm.crm_backend.model.enums.CustomerStatus.ACTIVE);
+        Customer saved = customerRepository.save(newCustomer);
+        log.info("Auto-provisioned customer entity with ID: {} for user: {}", saved.getId(), usernameOrEmail);
+        return customerMapper.toResponseDTO(saved);
+    }
+
+    @Transactional
+    public CustomerResponseDTO updateProfile(String usernameOrEmail, CustomerProfileUpdateDTO dto) {
+        log.info("Updating profile for user/customer: {}", usernameOrEmail);
+
+        com.crm.crm_backend.model.entity.User user = userRepository.findByUsername(usernameOrEmail)
+                .or(() -> userRepository.findByEmail(usernameOrEmail))
+                .orElse(null);
+
+        String emailToSearch = user != null ? user.getEmail() : usernameOrEmail;
+
+        Customer customer = customerRepository.findByEmail(emailToSearch)
+                .or(() -> user != null ? customerRepository.findByIdAndDeletedFalse(user.getId()) : java.util.Optional.empty())
+                .orElseGet(() -> {
+                    Customer newCustomer = new Customer();
+                    newCustomer.setCustomerNumber(customerNumberGenerator.generate());
+                    newCustomer.setEmail(emailToSearch);
+                    newCustomer.setStatus(com.crm.crm_backend.model.enums.CustomerStatus.ACTIVE);
+                    return newCustomer;
+                });
+
+        if (dto.getFirstName() != null && !dto.getFirstName().isBlank()) {
+            customer.setFirstName(dto.getFirstName());
+        }
+        if (dto.getLastName() != null && !dto.getLastName().isBlank()) {
+            customer.setLastName(dto.getLastName());
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() && !dto.getEmail().equals(customer.getEmail())) {
+            if (customerRepository.existsByEmail(dto.getEmail())) {
+                throw new DuplicateEntityException("Email " + dto.getEmail() + " already in use");
+            }
+            customer.setEmail(dto.getEmail());
+            if (user != null) {
+                user.setEmail(dto.getEmail());
+                userRepository.save(user);
+            }
+        }
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            String encoded = passwordEncoder.encode(dto.getPassword());
+            customer.setPassword(encoded);
+            if (user != null) {
+                user.setPassword(encoded);
+                userRepository.save(user);
+            }
+        }
+
+        Customer updated = customerRepository.save(customer);
+        log.info("Profile updated for customer ID: {}", updated.getId());
+        return customerMapper.toResponseDTO(updated);
+    }
+
+    // New method to update the authenticated user's profile
+    @Transactional
+    public com.crm.crm_backend.dto.response.CustomerResponseDTO updateProfile(Long userId, com.crm.crm_backend.dto.request.CustomerProfileUpdateDTO dto) {
+        log.info("Updating profile for customer ID: {}", userId);
+        Customer customer = customerRepository.findByIdAndDeletedFalse(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + userId));
+
+        if (dto.getFirstName() != null && !dto.getFirstName().isBlank()) {
+            customer.setFirstName(dto.getFirstName());
+        }
+        if (dto.getLastName() != null && !dto.getLastName().isBlank()) {
+            customer.setLastName(dto.getLastName());
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() && !customer.getEmail().equals(dto.getEmail())) {
+            if (customerRepository.existsByEmail(dto.getEmail())) {
+                throw new DuplicateEntityException("Email " + dto.getEmail() + " already in use");
+            }
+            customer.setEmail(dto.getEmail());
+        }
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            String encoded = passwordEncoder.encode(dto.getPassword());
+            customer.setPassword(encoded);
+        }
+
+        Customer updated = customerRepository.save(customer);
+        log.info("Profile updated for customer ID: {}", updated.getId());
+        return customerMapper.toResponseDTO(updated);
     }
 
     private void applyTerritory(Customer customer, Long territoryId) {

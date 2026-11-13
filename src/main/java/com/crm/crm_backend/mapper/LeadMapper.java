@@ -16,6 +16,7 @@ public interface LeadMapper {
 
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "leadNumber", ignore = true)
     @Mapping(target = "leadScore", ignore = true)
     @Mapping(target = "convertedCustomer", ignore = true)
     @Mapping(target = "convertedAt", ignore = true)
@@ -31,6 +32,7 @@ public interface LeadMapper {
     LeadResponseDTO toResponseDTO(Lead entity);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "leadNumber", ignore = true)
     @Mapping(target = "territory", ignore = true)
     void updateEntityFromDTO(
             LeadUpdateDTO dto,

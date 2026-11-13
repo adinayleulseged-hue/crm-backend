@@ -65,6 +65,10 @@ public class Quotation {
 
     private Boolean active;
 
+    @Column(name = "sales_order_generated")
+    @Builder.Default
+    private Boolean salesOrderGenerated = false;
+
     @OneToMany(
             mappedBy = "quotation",
             cascade = CascadeType.ALL,

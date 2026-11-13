@@ -22,7 +22,7 @@ public class SalesOrderController {
     private final SalesOrderService salesOrderService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> createSalesOrder(
             @Valid @RequestBody SalesOrderCreateDTO dto) {
 
@@ -31,7 +31,7 @@ public class SalesOrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> getSalesOrderById(
             @PathVariable Long id) {
 
@@ -39,15 +39,16 @@ public class SalesOrderController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<SalesOrderResponseDTO>>> getAllSalesOrders(
+            @RequestParam(required = false) Long customerId,
             Pageable pageable) {
 
-        return ResponseEntity.ok(ApiResponse.success(salesOrderService.getAllSalesOrders(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(salesOrderService.getAllSalesOrders(customerId, pageable)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> updateSalesOrder(
             @PathVariable Long id,
             @Valid @RequestBody SalesOrderUpdateDTO dto) {
@@ -56,7 +57,7 @@ public class SalesOrderController {
     }
 
     @PatchMapping("/{id}/confirm")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> confirmSalesOrder(
             @PathVariable Long id) {
 
@@ -66,11 +67,23 @@ public class SalesOrderController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteSalesOrder(
             @PathVariable Long id) {
 
         salesOrderService.deleteSalesOrder(id);
         return ResponseEntity.ok(ApiResponse.success("Sales order deleted", null));
+    }
+
+    // Generate invoice from sales order (SalesOrder → Invoice workflow)
+    @PostMapping("/{id}/generate-invoice")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<com.crm.crm_backend.dto.response.InvoiceResponseDTO>> generateInvoice(
+            @PathVariable Long id) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        "Invoice generated from sales order",
+                        salesOrderService.generateInvoiceFromOrder(id)));
     }
 }

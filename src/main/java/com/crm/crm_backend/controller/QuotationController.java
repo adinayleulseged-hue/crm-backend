@@ -29,7 +29,7 @@ public class QuotationController {
     private final QuotationService quotationService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<QuotationResponseDTO>> createQuotation(
             @Valid @RequestBody QuotationCreateDTO dto) {
 
@@ -38,7 +38,7 @@ public class QuotationController {
     }
 
     @GetMapping("/export.csv")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<String> exportQuotations(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) QuotationStatus status,
@@ -58,7 +58,7 @@ public class QuotationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<QuotationResponseDTO>> getQuotation(
             @PathVariable Long id) {
 
@@ -66,7 +66,7 @@ public class QuotationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<QuotationResponseDTO>>> getAllQuotations(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) QuotationStatus status,
@@ -84,7 +84,7 @@ public class QuotationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<QuotationResponseDTO>> updateQuotation(
             @PathVariable Long id,
             @Valid @RequestBody QuotationUpdateDTO dto) {
@@ -93,7 +93,7 @@ public class QuotationController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<QuotationResponseDTO>> changeStatus(
             @PathVariable Long id,
             @RequestParam QuotationStatus status) {
@@ -104,7 +104,7 @@ public class QuotationController {
     }
 
     @PatchMapping("/{id}/accept")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<SalesOrderResponseDTO>> acceptQuotation(
             @PathVariable Long id) {
 
@@ -114,7 +114,7 @@ public class QuotationController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteQuotation(
             @PathVariable Long id) {
 

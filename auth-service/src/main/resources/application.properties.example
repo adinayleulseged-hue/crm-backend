@@ -4,7 +4,7 @@ server.port=${SERVER_PORT:8081}
 # Copy to application.properties and fill Neon credentials.
 # Must share the same JWT secret as CRM (crm.security.jwt.secret).
 
-spring.datasource.url=${DB_URL:jdbc:postgresql://YOUR_NEON_HOST/neondb?sslmode=require&prepareThreshold=0}
+spring.datasource.url=${DB_URL:jdbc:postgresql://YOUR_NEON_HOST/neondb?sslmode=disable&prepareThreshold=0}
 spring.datasource.username=${DB_USER:neondb_owner}
 spring.datasource.password=${DB_PASSWORD:YOUR_NEON_PASSWORD}
 

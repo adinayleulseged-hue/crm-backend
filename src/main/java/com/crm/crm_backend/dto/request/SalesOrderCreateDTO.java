@@ -13,10 +13,8 @@ public class SalesOrderCreateDTO {
     @NotNull
     private Long customerId;
 
-    @NotNull
     private Long opportunityId;
 
-    @NotNull
     private OrderType type;
 
     private LocalDate orderDate;

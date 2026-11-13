@@ -19,8 +19,8 @@ public interface PaymentMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Payment toEntity(PaymentCreateDTO dto);
 
-    @Mapping(target = "invoiceId", source = "invoice.id")
-    @Mapping(target = "customerId", source = "customer.id")
+    @Mapping(target = "invoiceId", expression = "java(payment.getInvoice() != null ? payment.getInvoice().getId() : null)")
+    @Mapping(target = "customerId", expression = "java(payment.getCustomer() != null ? payment.getCustomer().getId() : null)")
     PaymentResponseDTO toResponseDTO(Payment payment);
 
     @BeanMapping(

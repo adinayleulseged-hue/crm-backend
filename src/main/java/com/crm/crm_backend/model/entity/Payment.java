@@ -3,6 +3,7 @@ package com.crm.crm_backend.model.entity;
 
 import com.crm.crm_backend.model.enums.PaymentMethod;
 import com.crm.crm_backend.model.enums.PaymentStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,11 +28,13 @@ public class Payment {
     private String paymentNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invoice_id", nullable = false)
+    @JoinColumn(name = "invoice_id", nullable = true)  // Made nullable to handle mock invoices
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "customer", "payments", "salesOrder", "quotation"})
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "customer_id", nullable = true)  // Made nullable to handle mock data
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "leads", "opportunities", "orders", "invoices", "payments", "interactions", "contacts", "addresses"})
     private Customer customer;
 
     @Enumerated(EnumType.STRING)

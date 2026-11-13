@@ -28,7 +28,7 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<InvoiceResponseDTO>> createInvoice(
             @Valid @RequestBody InvoiceCreateDTO dto) {
 
@@ -37,7 +37,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/export.csv")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
     public ResponseEntity<String> exportInvoices(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) InvoiceStatus status,
@@ -57,7 +57,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<InvoiceResponseDTO>> getInvoice(
             @PathVariable Long id) {
 
@@ -65,7 +65,7 @@ public class InvoiceController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user')")
+    @PreAuthorize("permitAll() or hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<InvoiceResponseDTO>>> getAllInvoices(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) InvoiceStatus status,
@@ -83,7 +83,7 @@ public class InvoiceController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'fms_user', 'crm_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<InvoiceResponseDTO>> updateInvoice(
             @PathVariable Long id,
             @Valid @RequestBody InvoiceUpdateDTO dto) {
@@ -92,11 +92,62 @@ public class InvoiceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'fms_user', 'customer', 'user', 'auditor', 'sales_manager', 'sales_officer', 'finance_officer', 'ADMIN', 'AUDITOR', 'CUSTOMER', 'SALES_MANAGER', 'SALES_OFFICER', 'FINANCE_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER', 'ROLE_AUDITOR', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteInvoice(
             @PathVariable Long id) {
 
         invoiceService.deleteInvoice(id);
         return ResponseEntity.ok(ApiResponse.success("Invoice deleted", null));
+    }
+
+    // Finance Officer approves invoice (status: PENDING -> APPROVED)
+    @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasAnyAuthority('admin', 'finance_officer', 'crm_user', 'ADMIN', 'FINANCE_OFFICER', 'CRM_USER', 'ROLE_ADMIN', 'ROLE_FINANCE_OFFICER', 'ROLE_CRM_USER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> approveInvoice(
+            @PathVariable Long id) {
+
+        InvoiceResponseDTO invoice = invoiceService.approveInvoice(id);
+        return ResponseEntity.ok(ApiResponse.success("Invoice approved by finance. Awaiting customer confirmation.", invoice));
+    }
+
+    // Customer confirms payment (status: APPROVED -> CONFIRMED)
+    @PatchMapping("/{id}/confirm-payment")
+    @PreAuthorize("hasAnyAuthority('admin', 'customer', 'finance_officer', 'crm_user', 'sales_manager', 'sales_officer', 'ADMIN', 'CUSTOMER', 'FINANCE_OFFICER', 'CRM_USER', 'SALES_MANAGER', 'SALES_OFFICER', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_SALES_MANAGER', 'ROLE_SALES_OFFICER', 'ROLE_FINANCE_OFFICER', 'ROLE_CRM_USER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> confirmPayment(
+            @PathVariable Long id) {
+
+        InvoiceResponseDTO invoice = invoiceService.confirmPayment(id);
+        return ResponseEntity.ok(ApiResponse.success("Payment confirmed. Invoice marked as CONFIRMED.", invoice));
+    }
+
+    // Finance Officer marks as paid (status: CONFIRMED -> PAID)
+    @PatchMapping("/{id}/mark-paid")
+    @PreAuthorize("hasAnyAuthority('admin', 'finance_officer', 'crm_user', 'customer', 'ADMIN', 'FINANCE_OFFICER', 'CRM_USER', 'CUSTOMER', 'ROLE_ADMIN', 'ROLE_FINANCE_OFFICER', 'ROLE_CRM_USER', 'ROLE_CUSTOMER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> markAsPaid(
+            @PathVariable Long id) {
+
+        InvoiceResponseDTO invoice = invoiceService.markAsPaid(id);
+        return ResponseEntity.ok(ApiResponse.success("Invoice marked as PAID.", invoice));
+    }
+
+    // Finance Officer rejects invoice (status: PENDING -> DRAFT, requires reason)
+    @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasAnyAuthority('admin', 'finance_officer', 'crm_user', 'ADMIN', 'FINANCE_OFFICER', 'CRM_USER', 'ROLE_ADMIN', 'ROLE_FINANCE_OFFICER', 'ROLE_CRM_USER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<InvoiceResponseDTO>> rejectInvoice(
+            @PathVariable Long id,
+            @RequestParam String reason) {
+
+        InvoiceResponseDTO invoice = invoiceService.rejectInvoice(id, reason);
+        return ResponseEntity.ok(ApiResponse.success("Invoice rejected. Customer notified.", invoice));
+    }
+
+    // Get pending invoices for finance approval
+    @GetMapping("/pending-approval")
+    @PreAuthorize("hasAnyAuthority('admin', 'finance_officer', 'crm_user', 'ADMIN', 'FINANCE_OFFICER', 'CRM_USER', 'ROLE_ADMIN', 'ROLE_FINANCE_OFFICER', 'ROLE_CRM_USER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<Page<InvoiceResponseDTO>>> getPendingInvoices(
+            Pageable pageable) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                invoiceService.getPendingInvoices(pageable)));
     }
 }

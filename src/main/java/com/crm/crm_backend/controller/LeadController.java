@@ -27,7 +27,6 @@ public class LeadController {
     private final LeadService leadService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> createLead(
             @Valid @RequestBody LeadCreateDTO dto) {
 
@@ -36,8 +35,18 @@ public class LeadController {
                 .body(ApiResponse.success("Lead created", response));
     }
 
+    @PostMapping("/public")
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> createPublicLead(
+            @Valid @RequestBody LeadCreateDTO dto) {
+
+        // Public endpoint for contact form submissions - no authentication required
+        LeadResponseDTO response = leadService.createLead(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Lead created", response));
+    }
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> getLeadById(
             @PathVariable Long id) {
 
@@ -45,7 +54,7 @@ public class LeadController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<LeadResponseDTO>>> getAllLeads(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) LeadStatus status,
@@ -61,7 +70,7 @@ public class LeadController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> updateLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadUpdateDTO dto) {
@@ -70,7 +79,7 @@ public class LeadController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteLead(
             @PathVariable Long id) {
 
@@ -79,7 +88,7 @@ public class LeadController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> updateLeadStatus(
             @PathVariable Long id,
             @RequestParam com.crm.crm_backend.model.enums.LeadStatus status) {
@@ -90,7 +99,7 @@ public class LeadController {
     }
 
     @PatchMapping("/{id}/convert")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<LeadResponseDTO>> convertLead(
             @PathVariable Long id,
             @Valid @RequestBody LeadConvertDTO dto) {
@@ -98,5 +107,27 @@ public class LeadController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Lead converted",
                 leadService.convertLeadToCustomer(id, dto)));
+    }
+
+    @PatchMapping("/{id}/qualify")
+    @PreAuthorize("hasAnyAuthority('admin', 'sales_manager', 'crm_user', 'ROLE_ADMIN', 'ROLE_SALES_MANAGER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> qualifyLead(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lead qualified successfully",
+                leadService.qualifyLead(id, reason)));
+    }
+
+    @PatchMapping("/{id}/disqualify")
+    @PreAuthorize("hasAnyAuthority('admin', 'sales_manager', 'crm_user', 'ROLE_ADMIN', 'ROLE_SALES_MANAGER') or isAuthenticated()")
+    public ResponseEntity<ApiResponse<LeadResponseDTO>> disqualifyLead(
+            @PathVariable Long id,
+            @RequestParam(required = true) String reason) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lead disqualified",
+                leadService.disqualifyLead(id, reason)));
     }
 }

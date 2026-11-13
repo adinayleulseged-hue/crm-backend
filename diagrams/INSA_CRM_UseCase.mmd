@@ -1,0 +1,229 @@
+graph LR
+    %% INSA CRM System - Use Case Diagram with Campaign Management
+    %% Created for Mermaid rendering
+    
+    classDef actor fill:#ffeb3b,stroke:#333,stroke-width:2px
+    classDef usecase fill:#90caf9,stroke:#1976d2,stroke-width:2px
+    classDef system fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    classDef campaign fill:#f8bbd0,stroke:#c2185b,stroke-width:2px
+    
+    %% Actors
+    Visitor[Public Visitor]:::actor
+    Customer[Customer]:::actor
+    SalesOfficer[Sales Officer]:::actor
+    SalesManager[Sales Manager]:::actor
+    Marketing[Marketing Manager]:::actor
+    Finance[Finance Officer]:::actor
+    Auditor[Auditor]:::actor
+    Admin[Admin]:::actor
+    
+    %% Public Portal
+    subgraph PublicPortal[Public Portal]
+        UC1[Submit Lead Inquiry]:::usecase
+        UC2[View Products Catalog]:::usecase
+        UC3[Submit Contact Form]:::usecase
+        UC4[Subscribe Newsletter]:::usecase
+    end
+    
+    %% Authentication
+    subgraph Auth[Authentication]
+        UCLogin[Login to System]:::usecase
+        UCValidate[Validate Credentials]:::usecase
+        UCToken[Generate JWT Token]:::usecase
+    end
+    
+    %% Customer Portal
+    subgraph CustomerPortal[Customer Portal]
+        UC10[View Own Orders]:::usecase
+        UC11[Track Order Status]:::usecase
+        UC12[View Invoices]:::usecase
+        UC13[Make Payment]:::usecase
+        UC14[Download Invoice PDF]:::usecase
+    end
+    
+    %% Lead Management
+    subgraph LeadMgmt[Lead Management]
+        UC20[View All Leads]:::usecase
+        UC21[Create New Lead]:::usecase
+        UC22[Qualify Lead]:::usecase
+        UC23[Disqualify Lead]:::usecase
+        UC24[Provide Qualification Reason]:::usecase
+        UC26[Convert to Customer]:::usecase
+        UCEmail[Send Notification Email]:::usecase
+    end
+    
+    %% Campaign Management (NEW!)
+    subgraph CampaignMgmt[Campaign Management]
+        UC80[View All Campaigns]:::campaign
+        UC81[Create Campaign]:::campaign
+        UC82[Edit Campaign]:::campaign
+        UC83[Launch Campaign]:::campaign
+        UC84[Pause Campaign]:::campaign
+        UC85[Close Campaign]:::campaign
+        UC86[Define Target Audience]:::campaign
+        UC87[Set Campaign Budget]:::campaign
+        UC89[Track Performance]:::campaign
+        UC90[Generate Report]:::campaign
+        UC91[Send Bulk Email]:::campaign
+        UC92[Track Email Opens]:::campaign
+        UC94[Assign Leads to Campaign]:::campaign
+    end
+    
+    %% Sales Management
+    subgraph SalesMgmt[Sales Management]
+        UC30[View Sales Deals]:::usecase
+        UC31[Create Sales Deal]:::usecase
+        UC32[Edit Sales Deal]:::usecase
+        UC33[Approve Sales Deal]:::usecase
+        UC34[Reject Sales Deal]:::usecase
+        UC35[Apply Discount]:::usecase
+    end
+    
+    %% Customer Management
+    subgraph CustomerMgmt[Customer Management]
+        UC40[View Customers]:::usecase
+        UC41[Create Customer]:::usecase
+        UC42[Invite Customer]:::usecase
+        UC43[Generate Temp Password]:::usecase
+        UC45[Edit Customer Info]:::usecase
+    end
+    
+    %% Financial Management
+    subgraph FinanceMgmt[Financial Management]
+        UC50[View Invoices]:::usecase
+        UC51[Create Invoice]:::usecase
+        UC52[Approve Invoice]:::usecase
+        UC53[Process Payment]:::usecase
+        UC54[View Payment History]:::usecase
+        UC55[Generate Financial Report]:::usecase
+    end
+    
+    %% Administration
+    subgraph AdminMgmt[Administration]
+        UC60[Manage Users]:::usecase
+        UC61[Create User Account]:::usecase
+        UC62[Auto-Generate Password]:::usecase
+        UC64[Change User Role]:::usecase
+        UC66[View Audit Logs]:::usecase
+    end
+    
+    %% Audit & Compliance
+    subgraph AuditMgmt[Audit & Compliance]
+        UC70[View System Logs]:::usecase
+        UC71[View User Activities]:::usecase
+        UC72[Generate Audit Report]:::usecase
+        UC73[Export Audit Data]:::usecase
+    end
+    
+    %% Actor to Use Case Relationships
+    
+    %% Public Visitor
+    Visitor --> UC1
+    Visitor --> UC2
+    Visitor --> UC3
+    Visitor --> UC4
+    
+    %% Customer
+    Customer --> UCLogin
+    Customer --> UC10
+    Customer --> UC11
+    Customer --> UC12
+    Customer --> UC13
+    Customer --> UC14
+    
+    %% Sales Officer
+    SalesOfficer --> UCLogin
+    SalesOfficer --> UC20
+    SalesOfficer --> UC21
+    SalesOfficer --> UC22
+    SalesOfficer --> UC23
+    SalesOfficer --> UC30
+    SalesOfficer --> UC31
+    SalesOfficer --> UC40
+    SalesOfficer --> UC41
+    
+    %% Sales Manager
+    SalesManager --> UCLogin
+    SalesManager --> UC20
+    SalesManager --> UC22
+    SalesManager --> UC26
+    SalesManager --> UC30
+    SalesManager --> UC31
+    SalesManager --> UC33
+    SalesManager --> UC34
+    SalesManager --> UC40
+    SalesManager --> UC42
+    
+    %% Marketing Manager (NEW!)
+    Marketing --> UCLogin
+    Marketing --> UC80
+    Marketing --> UC81
+    Marketing --> UC82
+    Marketing --> UC83
+    Marketing --> UC84
+    Marketing --> UC85
+    Marketing --> UC89
+    Marketing --> UC90
+    Marketing --> UC94
+    Marketing --> UC20
+    
+    %% Finance Officer
+    Finance --> UCLogin
+    Finance --> UC50
+    Finance --> UC51
+    Finance --> UC52
+    Finance --> UC53
+    Finance --> UC54
+    Finance --> UC55
+    
+    %% Auditor
+    Auditor --> UCLogin
+    Auditor --> UC66
+    Auditor --> UC70
+    Auditor --> UC71
+    Auditor --> UC72
+    Auditor --> UC73
+    
+    %% Admin
+    Admin --> UCLogin
+    Admin --> UC60
+    Admin --> UC61
+    Admin --> UC64
+    Admin --> UC66
+    Admin --> UC20
+    Admin --> UC22
+    Admin --> UC30
+    Admin --> UC33
+    Admin --> UC40
+    Admin --> UC42
+    Admin --> UC50
+    Admin --> UC52
+    Admin --> UC80
+    Admin --> UC81
+    
+    %% Include Relationships (mandatory)
+    UCLogin -.->|include| UCValidate
+    UCValidate -.->|include| UCToken
+    UC22 -.->|include| UCEmail
+    UC23 -.->|include| UCEmail
+    UC33 -.->|include| UCEmail
+    UC34 -.->|include| UCEmail
+    UC61 -.->|include| UC62
+    UC42 -.->|include| UC43
+    UC81 -.->|include| UC86
+    UC83 -.->|include| UC91
+    
+    %% Extend Relationships (optional)
+    UC24 -.->|extend| UC22
+    UC35 -.->|extend| UC33
+    UC87 -.->|extend| UC81
+    UC92 -.->|extend| UC91
+    
+    %% Notes
+    Note1[📧 Email notifications<br/>for all key actions]
+    Note2[🎯 Campaign Management<br/>with full tracking]
+    Note3[🔐 JWT-based auth<br/>with role validation]
+    
+    UCEmail --- Note1
+    UC80 --- Note2
+    UCLogin --- Note3

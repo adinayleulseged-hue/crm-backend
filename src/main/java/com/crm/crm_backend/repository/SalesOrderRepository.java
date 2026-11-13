@@ -3,6 +3,8 @@ package com.crm.crm_backend.repository;
 
 import com.crm.crm_backend.model.entity.SalesOrder;
 import com.crm.crm_backend.model.enums.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -23,6 +25,8 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
     List<SalesOrder> findByStatus(OrderStatus status);
 
     List<SalesOrder> findByCustomerId(Long customerId);
+
+    Page<SalesOrder> findByCustomerId(Long customerId, Pageable pageable);
 
     List<SalesOrder> findByOpportunityId(Long opportunityId);
 }

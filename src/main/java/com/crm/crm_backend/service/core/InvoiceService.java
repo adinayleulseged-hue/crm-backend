@@ -44,6 +44,7 @@ public class InvoiceService {
     private final InvoiceEventPublisher invoiceEventPublisher;
     private final InvoiceValidator invoiceValidator;
     private final CsvGenerator csvGenerator;
+    private final com.crm.crm_backend.service.SystemNotificationService notificationService;
 
     public InvoiceResponseDTO createInvoice(InvoiceCreateDTO dto) {
 
@@ -239,5 +240,148 @@ public class InvoiceService {
 
         log.info("Invoice reminder run complete: candidates={} reminded={}", dueCandidates.size(), reminded);
         return reminded;
+    }
+
+    /**
+     * Finance officer approves invoice (PENDING/SENT -> APPROVED)
+     * After approval, invoice goes to customer portal for payment confirmation
+     */
+    public InvoiceResponseDTO approveInvoice(Long id) {
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Invoice not found with id: " + id));
+
+        invoiceValidator.validateNotCancelled(invoice);
+
+        // Validate status transition
+        if (invoice.getStatus() != InvoiceStatus.PENDING && invoice.getStatus() != InvoiceStatus.SENT) {
+            throw new IllegalStateException(
+                    "Invoice can only be approved from PENDING or SENT status. Current status: " + invoice.getStatus());
+        }
+
+        DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.APPROVED);
+
+        invoice.setStatus(InvoiceStatus.APPROVED);
+        invoice.setApprovedAt(LocalDateTime.now());
+        // In a real system, get from SecurityContext
+        invoice.setApprovedBy("FINANCE_OFFICER");
+
+        Invoice saved = invoiceRepository.save(invoice);
+        invoiceEventPublisher.publishInvoiceCreated(saved); // Notify customer
+        
+        // Send notification to customer
+        notificationService.notifyInvoiceApproved(saved);
+
+        log.info("Invoice {} approved by finance. Status: {} -> APPROVED", 
+                invoice.getInvoiceNumber(), invoice.getStatus());
+
+        return invoiceMapper.toResponseDTO(saved);
+    }
+
+    /**
+     * Customer confirms payment (APPROVED -> CONFIRMED)
+     * After customer confirmation, finance can mark as paid
+     */
+    public InvoiceResponseDTO confirmPayment(Long id) {
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Invoice not found with id: " + id));
+
+        invoiceValidator.validateNotCancelled(invoice);
+
+        if (invoice.getStatus() != InvoiceStatus.APPROVED) {
+            throw new IllegalStateException(
+                    "Invoice must be APPROVED before customer can confirm payment. Current status: " + invoice.getStatus());
+        }
+
+        DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.CONFIRMED);
+
+        invoice.setStatus(InvoiceStatus.CONFIRMED);
+        invoice.setConfirmedAt(LocalDateTime.now());
+        // In a real system, get from SecurityContext
+        invoice.setConfirmedBy("CUSTOMER");
+
+        Invoice saved = invoiceRepository.save(invoice);
+
+        log.info("Invoice {} payment confirmed by customer. Status: APPROVED -> CONFIRMED", 
+                invoice.getInvoiceNumber());
+
+        return invoiceMapper.toResponseDTO(saved);
+    }
+
+    /**
+     * Finance officer marks invoice as paid (CONFIRMED -> PAID)
+     * Final step in the payment workflow
+     */
+    public InvoiceResponseDTO markAsPaid(Long id) {
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Invoice not found with id: " + id));
+
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            return invoiceMapper.toResponseDTO(invoice);
+        }
+
+        invoiceValidator.validateNotCancelled(invoice);
+
+        DomainStatusGuard.assertInvoiceTransition(invoice.getStatus(), InvoiceStatus.PAID);
+
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setPaidAt(LocalDateTime.now());
+        invoice.setPaidBy("FINANCE_OFFICER");
+        
+        // Update paid amount and balance
+        if (invoice.getPaidAmount() == null || invoice.getPaidAmount().compareTo(invoice.getTotalAmount()) < 0) {
+            invoice.setPaidAmount(invoice.getTotalAmount());
+            invoice.setBalanceAmount(BigDecimal.ZERO);
+        }
+
+        Invoice saved = invoiceRepository.save(invoice);
+
+        log.info("Invoice {} marked as PAID by finance. Status: CONFIRMED -> PAID", 
+                invoice.getInvoiceNumber());
+
+        return invoiceMapper.toResponseDTO(saved);
+    }
+
+    /**
+     * Finance officer rejects invoice (PENDING -> DRAFT)
+     * Customer must revise and resubmit
+     */
+    public InvoiceResponseDTO rejectInvoice(Long id, String reason) {
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Invoice not found with id: " + id));
+
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Rejection reason is required");
+        }
+
+        invoiceValidator.validateNotCancelled(invoice);
+
+        // Can only reject PENDING invoices
+        if (invoice.getStatus() != InvoiceStatus.PENDING) {
+            throw new IllegalStateException("Can only reject PENDING invoices. Current status: " + invoice.getStatus());
+        }
+
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        invoice.setRejectedBy("FINANCE_OFFICER");
+        invoice.setRejectedAt(LocalDateTime.now());
+        invoice.setRejectionReason(reason);
+
+        Invoice saved = invoiceRepository.save(invoice);
+
+        log.info("Invoice {} rejected by finance. Reason: {}", 
+                invoice.getInvoiceNumber(), reason);
+
+        // TODO: Send email notification to customer about rejection
+        notificationService.notifyInvoiceRejected(saved, reason);
+
+        return invoiceMapper.toResponseDTO(saved);
+    }
+
+    /**
+     * Get all pending invoices awaiting finance approval
+     */
+    @Transactional(readOnly = true)
+    public Page<InvoiceResponseDTO> getPendingInvoices(Pageable pageable) {
+        Page<Invoice> invoices = invoiceRepository.findByStatus(InvoiceStatus.PENDING, pageable);
+        return invoices.map(invoiceMapper::toResponseDTO);
     }
 }

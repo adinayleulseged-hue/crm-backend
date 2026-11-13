@@ -21,26 +21,30 @@ public class PaymentEventPublisher {
     private final RabbitTemplate rabbitTemplate;
 
     public void publishPaymentReceived(Payment payment) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("paymentId", payment.getId());
-        data.put("paymentNumber", payment.getPaymentNumber());
-        data.put("invoiceId", payment.getInvoice() != null ? payment.getInvoice().getId() : null);
-        data.put("customerId", payment.getCustomer() != null ? payment.getCustomer().getId() : null);
-        data.put("amount", payment.getAmount());
-        data.put("status", payment.getStatus() != null ? payment.getStatus().name() : null);
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("paymentId", payment.getId());
+            data.put("paymentNumber", payment.getPaymentNumber());
+            data.put("invoiceId", payment.getInvoice() != null ? payment.getInvoice().getId() : null);
+            data.put("customerId", payment.getCustomer() != null ? payment.getCustomer().getId() : null);
+            data.put("amount", payment.getAmount());
+            data.put("status", payment.getStatus() != null ? payment.getStatus().name() : null);
 
-        DomainEventMessage message = DomainEventMessage.builder()
-                .eventName(CrmRoutingKeys.PAYMENT_RECEIVED)
-                .source("crm-backend")
-                .occurredAt(LocalDateTime.now())
-                .data(data)
-                .build();
+            DomainEventMessage message = DomainEventMessage.builder()
+                    .eventName(CrmRoutingKeys.PAYMENT_RECEIVED)
+                    .source("crm-backend")
+                    .occurredAt(LocalDateTime.now())
+                    .data(data)
+                    .build();
 
-        rabbitTemplate.convertAndSend(
-                CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE,
-                CrmRoutingKeys.PAYMENT_RECEIVED,
-                message);
+            rabbitTemplate.convertAndSend(
+                    CrmRabbitMQConfig.ERP_EVENTS_EXCHANGE,
+                    CrmRoutingKeys.PAYMENT_RECEIVED,
+                    message);
 
-        log.info("Published event {} for payment {}", CrmRoutingKeys.PAYMENT_RECEIVED, payment.getPaymentNumber());
+            log.info("Published event {} for payment {}", CrmRoutingKeys.PAYMENT_RECEIVED, payment.getPaymentNumber());
+        } catch (Exception e) {
+            log.warn("Failed to publish payment event for {}: {}", payment != null ? payment.getPaymentNumber() : null, e.getMessage());
+        }
     }
 }

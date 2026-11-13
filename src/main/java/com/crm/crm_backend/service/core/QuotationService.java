@@ -248,6 +248,7 @@ public class QuotationService {
         quotationValidator.validateCanAccept(quotation);
         DomainStatusGuard.assertQuotationTransition(quotation.getStatus(), QuotationStatus.ACCEPTED);
         quotation.setStatus(QuotationStatus.ACCEPTED);
+        quotation.setSalesOrderGenerated(true);  // Mark as sales order generated
         quotation.getItems().size();
         quotationRepository.save(quotation);
 

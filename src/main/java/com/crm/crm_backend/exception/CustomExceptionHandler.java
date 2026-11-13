@@ -1,4 +1,5 @@
 package com.crm.crm_backend.exception;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.crm.crm_backend.common.ApiResponse;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,11 @@ public class CustomExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Access denied: You do not have permission to perform this action."));
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()

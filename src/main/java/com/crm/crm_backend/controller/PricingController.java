@@ -23,7 +23,7 @@ public class PricingController {
     private final PricingService pricingService;
 
     @PostMapping("/rules")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<PricingRuleResponseDTO>> createRule(
             @Valid @RequestBody PricingRuleRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -31,19 +31,19 @@ public class PricingController {
     }
 
     @GetMapping("/rules/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<PricingRuleResponseDTO>> getRule(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(pricingService.getRule(id)));
     }
 
     @GetMapping("/rules")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<PricingRuleResponseDTO>>> getAllRules(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(pricingService.getAllRules(pageable)));
     }
 
     @PutMapping("/rules/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<PricingRuleResponseDTO>> updateRule(
             @PathVariable Long id,
             @Valid @RequestBody PricingRuleRequestDTO dto) {
@@ -53,14 +53,14 @@ public class PricingController {
     }
 
     @DeleteMapping("/rules/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteRule(@PathVariable Long id) {
         pricingService.deleteRule(id);
         return ResponseEntity.ok(ApiResponse.success("Pricing rule deleted", null));
     }
 
     @PostMapping("/apply")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<PricingApplyResponseDTO>> applyPricing(
             @Valid @RequestBody PricingApplyRequestDTO dto) {
         return ResponseEntity.ok(ApiResponse.success(

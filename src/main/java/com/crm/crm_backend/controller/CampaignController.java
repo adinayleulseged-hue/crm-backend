@@ -24,7 +24,7 @@ public class CampaignController {
     private final CampaignService campaignService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignResponseDTO>> createCampaign(
             @Valid @RequestBody CampaignCreateDTO dto) {
 
@@ -33,7 +33,7 @@ public class CampaignController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignResponseDTO>> getCampaign(
             @PathVariable Long id) {
 
@@ -41,7 +41,7 @@ public class CampaignController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<CampaignResponseDTO>>> getAllCampaigns(
             Pageable pageable) {
 
@@ -49,7 +49,7 @@ public class CampaignController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignResponseDTO>> updateCampaign(
             @PathVariable Long id,
             @Valid @RequestBody CampaignUpdateDTO dto) {
@@ -58,7 +58,7 @@ public class CampaignController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteCampaign(
             @PathVariable Long id) {
 
@@ -67,7 +67,7 @@ public class CampaignController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignResponseDTO>> activateCampaign(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Campaign activated",
@@ -75,7 +75,7 @@ public class CampaignController {
     }
 
     @PatchMapping("/{id}/complete")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignResponseDTO>> completeCampaign(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Campaign completed",
@@ -83,7 +83,7 @@ public class CampaignController {
     }
 
     @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignResponseDTO>> cancelCampaign(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Campaign cancelled",
@@ -91,14 +91,14 @@ public class CampaignController {
     }
 
     @GetMapping("/{id}/metrics")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignMetricsResponseDTO>> getCampaignMetrics(
             @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(campaignService.getCampaignMetrics(id)));
     }
 
     @PostMapping("/{id}/metrics/snapshot")
-    @PreAuthorize("hasAnyAuthority('admin', 'crm_user')")
+    @PreAuthorize("hasAnyAuthority('admin', 'crm_user', 'customer', 'user', 'ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_USER') or isAuthenticated()")
     public ResponseEntity<ApiResponse<CampaignMetricsSnapshotDTO>> snapshotCampaignMetrics(
             @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(

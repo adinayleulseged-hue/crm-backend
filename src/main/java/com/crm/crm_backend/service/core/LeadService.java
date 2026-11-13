@@ -21,7 +21,9 @@ import com.crm.crm_backend.repository.LeadRepository;
 import com.crm.crm_backend.repository.TerritoryRepository;
 import com.crm.crm_backend.service.workflow.DomainStatusGuard;
 import com.crm.crm_backend.spec.LeadSpecification;
+import com.crm.crm_backend.util.SecurityUtils;
 import com.crm.crm_backend.util.calculator.LeadScoreCalculator;
+import com.crm.crm_backend.util.generator.LeadNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -49,6 +51,7 @@ public class LeadService {
     private final LeadEventPublisher leadEventPublisher;
     private final com.crm.crm_backend.validator.LeadValidator leadValidator;
     private final LeadAssignmentService leadAssignmentService;
+    private final LeadNumberGenerator leadNumberGenerator;
     private final TerritoryRepository territoryRepository;
 
     @Transactional
@@ -65,6 +68,7 @@ public class LeadService {
         }
 
         Lead lead = leadMapper.toEntity(dto);
+        lead.setLeadNumber(leadNumberGenerator.generate());
         applyTerritory(lead, dto.getTerritoryId());
 
         lead.setStatus(LeadStatus.NEW);
@@ -284,5 +288,67 @@ public class LeadService {
         }
         lead.setTerritory(territoryRepository.findById(territoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Territory not found: " + territoryId)));
+    }
+
+    /**
+     * Qualify a lead with optional reason
+     */
+    @Transactional
+    public LeadResponseDTO qualifyLead(Long id, String reason) {
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new LeadNotFoundException("Lead not found: " + id));
+
+        // Validate transition
+        DomainStatusGuard.assertLeadTransition(lead.getStatus(), LeadStatus.QUALIFIED);
+
+        // Update lead status and tracking fields
+        lead.setStatus(LeadStatus.QUALIFIED);
+        lead.setQualifiedBy(SecurityUtils.getCurrentUserId());
+        lead.setQualifiedAt(LocalDateTime.now());
+        lead.setQualificationReason(reason);
+        lead.setDisqualificationReason(null); // Clear disqualification reason if any
+
+        // Recalculate lead score
+        lead.setLeadScore(leadScoreCalculator.calculate(lead));
+
+        Lead updated = leadRepository.save(lead);
+
+        // Publish event
+        leadEventPublisher.publishLeadQualified(updated);
+
+        log.info("Lead {} qualified by user {} with reason: {}", 
+                 id, SecurityUtils.getCurrentUserId(), reason);
+
+        return leadMapper.toResponseDTO(updated);
+    }
+
+    /**
+     * Disqualify a lead with reason (required)
+     */
+    @Transactional
+    public LeadResponseDTO disqualifyLead(Long id, String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Disqualification reason is required");
+        }
+
+        Lead lead = leadRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new LeadNotFoundException("Lead not found: " + id));
+
+        // Validate transition
+        DomainStatusGuard.assertLeadTransition(lead.getStatus(), LeadStatus.UNQUALIFIED);
+
+        // Update lead status and tracking fields
+        lead.setStatus(LeadStatus.UNQUALIFIED);
+        lead.setQualifiedBy(SecurityUtils.getCurrentUserId());
+        lead.setQualifiedAt(LocalDateTime.now());
+        lead.setDisqualificationReason(reason);
+        lead.setQualificationReason(null); // Clear qualification reason if any
+
+        Lead updated = leadRepository.save(lead);
+
+        log.info("Lead {} disqualified by user {} with reason: {}", 
+                 id, SecurityUtils.getCurrentUserId(), reason);
+
+        return leadMapper.toResponseDTO(updated);
     }
 }

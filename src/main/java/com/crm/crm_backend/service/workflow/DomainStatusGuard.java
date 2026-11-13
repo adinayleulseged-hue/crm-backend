@@ -14,6 +14,10 @@ import java.util.Set;
 
 /**
  * Central status/stage transition rules for CRM pipeline entities.
+ *
+ * This class defines which status transitions are allowed
+ * for Leads, Opportunities, Quotations, Orders, Invoices,
+ * and Campaigns.
  */
 public final class DomainStatusGuard {
 
@@ -36,102 +40,480 @@ public final class DomainStatusGuard {
             new EnumMap<>(CampaignStatus.class);
 
     static {
-        LEAD.put(LeadStatus.NEW, EnumSet.of(
-                LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.UNQUALIFIED, LeadStatus.LOST));
-        LEAD.put(LeadStatus.CONTACTED, EnumSet.of(
-                LeadStatus.QUALIFIED, LeadStatus.UNQUALIFIED, LeadStatus.LOST, LeadStatus.NEW));
-        LEAD.put(LeadStatus.QUALIFIED, EnumSet.of(
-                LeadStatus.CONVERTED, LeadStatus.UNQUALIFIED, LeadStatus.LOST, LeadStatus.CONTACTED));
-        LEAD.put(LeadStatus.UNQUALIFIED, EnumSet.of(
-                LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.LOST));
-        LEAD.put(LeadStatus.LOST, EnumSet.of(LeadStatus.CONTACTED, LeadStatus.NEW));
-        LEAD.put(LeadStatus.CONVERTED, EnumSet.noneOf(LeadStatus.class));
 
-        OPPORTUNITY.put(OpportunityStage.NEW, EnumSet.of(
-                OpportunityStage.NEEDS_ANALYSIS, OpportunityStage.QUALIFICATION, OpportunityStage.CLOSED_LOST));
-        OPPORTUNITY.put(OpportunityStage.NEEDS_ANALYSIS, EnumSet.of(
-                OpportunityStage.QUALIFICATION, OpportunityStage.PROPOSAL, OpportunityStage.CLOSED_LOST));
-        OPPORTUNITY.put(OpportunityStage.QUALIFICATION, EnumSet.of(
-                OpportunityStage.PROPOSAL, OpportunityStage.NEEDS_ANALYSIS, OpportunityStage.CLOSED_LOST));
-        OPPORTUNITY.put(OpportunityStage.PROPOSAL, EnumSet.of(
-                OpportunityStage.NEGOTIATION, OpportunityStage.QUALIFICATION, OpportunityStage.CLOSED_LOST));
-        OPPORTUNITY.put(OpportunityStage.NEGOTIATION, EnumSet.of(
-                OpportunityStage.CLOSED_WON, OpportunityStage.CLOSED_LOST, OpportunityStage.PROPOSAL));
-        OPPORTUNITY.put(OpportunityStage.CLOSED_WON, EnumSet.noneOf(OpportunityStage.class));
-        OPPORTUNITY.put(OpportunityStage.CLOSED_LOST, EnumSet.noneOf(OpportunityStage.class));
+        // ============================================================
+        // LEAD STATUS TRANSITIONS
+        // ============================================================
 
-        QUOTATION.put(QuotationStatus.DRAFT, EnumSet.of(
-                QuotationStatus.SENT, QuotationStatus.CANCELLED, QuotationStatus.ACCEPTED,
-                QuotationStatus.EXPIRED));
-        QUOTATION.put(QuotationStatus.SENT, EnumSet.of(
-                QuotationStatus.ACCEPTED, QuotationStatus.REJECTED, QuotationStatus.EXPIRED,
-                QuotationStatus.CANCELLED, QuotationStatus.DRAFT));
-        QUOTATION.put(QuotationStatus.ACCEPTED, EnumSet.noneOf(QuotationStatus.class));
-        QUOTATION.put(QuotationStatus.REJECTED, EnumSet.noneOf(QuotationStatus.class));
-        QUOTATION.put(QuotationStatus.EXPIRED, EnumSet.noneOf(QuotationStatus.class));
-        QUOTATION.put(QuotationStatus.CANCELLED, EnumSet.noneOf(QuotationStatus.class));
+        LEAD.put(
+                LeadStatus.NEW,
+                EnumSet.of(
+                        LeadStatus.CONTACTED,
+                        LeadStatus.QUALIFIED,
+                        LeadStatus.UNQUALIFIED,
+                        LeadStatus.LOST
+                )
+        );
 
-        ORDER.put(OrderStatus.DRAFT, EnumSet.of(OrderStatus.PENDING, OrderStatus.APPROVED, OrderStatus.CANCELLED));
-        ORDER.put(OrderStatus.PENDING, EnumSet.of(OrderStatus.APPROVED, OrderStatus.DRAFT, OrderStatus.CANCELLED));
-        ORDER.put(OrderStatus.APPROVED, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
-        ORDER.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.COMPLETED, OrderStatus.CANCELLED));
-        ORDER.put(OrderStatus.COMPLETED, EnumSet.noneOf(OrderStatus.class));
-        ORDER.put(OrderStatus.CANCELLED, EnumSet.noneOf(OrderStatus.class));
+        LEAD.put(
+                LeadStatus.CONTACTED,
+                EnumSet.of(
+                        LeadStatus.QUALIFIED,
+                        LeadStatus.UNQUALIFIED,
+                        LeadStatus.LOST,
+                        LeadStatus.NEW
+                )
+        );
 
-        INVOICE.put(InvoiceStatus.DRAFT, EnumSet.of(
-                InvoiceStatus.PENDING, InvoiceStatus.SENT, InvoiceStatus.PAID, InvoiceStatus.CANCELLED));
-        INVOICE.put(InvoiceStatus.PENDING, EnumSet.of(
-                InvoiceStatus.SENT, InvoiceStatus.PAID, InvoiceStatus.OVERDUE, InvoiceStatus.CANCELLED));
-        INVOICE.put(InvoiceStatus.SENT, EnumSet.of(
-                InvoiceStatus.PAID, InvoiceStatus.OVERDUE, InvoiceStatus.PENDING, InvoiceStatus.CANCELLED));
-        INVOICE.put(InvoiceStatus.OVERDUE, EnumSet.of(InvoiceStatus.PAID, InvoiceStatus.CANCELLED));
-        // Allow reopening after payment reversal (CANCELLED / REFUNDED payment)
-        INVOICE.put(InvoiceStatus.PAID, EnumSet.of(InvoiceStatus.PENDING));
-        INVOICE.put(InvoiceStatus.CANCELLED, EnumSet.noneOf(InvoiceStatus.class));
+        LEAD.put(
+                LeadStatus.QUALIFIED,
+                EnumSet.of(
+                        LeadStatus.CONVERTED,
+                        LeadStatus.UNQUALIFIED,
+                        LeadStatus.LOST,
+                        LeadStatus.CONTACTED
+                )
+        );
 
-        CAMPAIGN.put(CampaignStatus.PLANNED, EnumSet.of(
-                CampaignStatus.ACTIVE, CampaignStatus.CANCELLED));
-        CAMPAIGN.put(CampaignStatus.ACTIVE, EnumSet.of(
-                CampaignStatus.COMPLETED, CampaignStatus.CANCELLED));
-        CAMPAIGN.put(CampaignStatus.COMPLETED, EnumSet.noneOf(CampaignStatus.class));
-        CAMPAIGN.put(CampaignStatus.CANCELLED, EnumSet.noneOf(CampaignStatus.class));
+        LEAD.put(
+                LeadStatus.UNQUALIFIED,
+                EnumSet.of(
+                        LeadStatus.CONTACTED,
+                        LeadStatus.QUALIFIED,
+                        LeadStatus.LOST
+                )
+        );
+
+        LEAD.put(
+                LeadStatus.LOST,
+                EnumSet.of(
+                        LeadStatus.CONTACTED,
+                        LeadStatus.NEW
+                )
+        );
+
+        LEAD.put(
+                LeadStatus.CONVERTED,
+                EnumSet.noneOf(LeadStatus.class)
+        );
+
+        // ============================================================
+        // OPPORTUNITY STAGE TRANSITIONS
+        // ============================================================
+
+        OPPORTUNITY.put(
+                OpportunityStage.NEW,
+                EnumSet.of(
+                        OpportunityStage.NEEDS_ANALYSIS,
+                        OpportunityStage.QUALIFICATION,
+                        OpportunityStage.CLOSED_LOST
+                )
+        );
+
+        OPPORTUNITY.put(
+                OpportunityStage.NEEDS_ANALYSIS,
+                EnumSet.of(
+                        OpportunityStage.QUALIFICATION,
+                        OpportunityStage.PROPOSAL,
+                        OpportunityStage.CLOSED_LOST
+                )
+        );
+
+        OPPORTUNITY.put(
+                OpportunityStage.QUALIFICATION,
+                EnumSet.of(
+                        OpportunityStage.PROPOSAL,
+                        OpportunityStage.NEEDS_ANALYSIS,
+                        OpportunityStage.CLOSED_LOST
+                )
+        );
+
+        /*
+         * PROPOSAL can now be closed directly as WON or LOST.
+         *
+         * This fixes:
+         *
+         * PROPOSAL -> CLOSED_WON
+         *
+         * which is required by OpportunityServiceTest.
+         */
+        OPPORTUNITY.put(
+                OpportunityStage.PROPOSAL,
+                EnumSet.of(
+                        OpportunityStage.NEGOTIATION,
+                        OpportunityStage.QUALIFICATION,
+                        OpportunityStage.CLOSED_WON,
+                        OpportunityStage.CLOSED_LOST
+                )
+        );
+
+        OPPORTUNITY.put(
+                OpportunityStage.NEGOTIATION,
+                EnumSet.of(
+                        OpportunityStage.CLOSED_WON,
+                        OpportunityStage.CLOSED_LOST,
+                        OpportunityStage.PROPOSAL
+                )
+        );
+
+        /*
+         * CLOSED_WON is terminal.
+         */
+        OPPORTUNITY.put(
+                OpportunityStage.CLOSED_WON,
+                EnumSet.noneOf(OpportunityStage.class)
+        );
+
+        /*
+         * CLOSED_LOST is terminal.
+         */
+        OPPORTUNITY.put(
+                OpportunityStage.CLOSED_LOST,
+                EnumSet.noneOf(OpportunityStage.class)
+        );
+
+        // ============================================================
+        // QUOTATION STATUS TRANSITIONS
+        // ============================================================
+
+        QUOTATION.put(
+                QuotationStatus.DRAFT,
+                EnumSet.of(
+                        QuotationStatus.SENT,
+                        QuotationStatus.CANCELLED,
+                        QuotationStatus.ACCEPTED,
+                        QuotationStatus.EXPIRED
+                )
+        );
+
+        QUOTATION.put(
+                QuotationStatus.SENT,
+                EnumSet.of(
+                        QuotationStatus.ACCEPTED,
+                        QuotationStatus.REJECTED,
+                        QuotationStatus.EXPIRED,
+                        QuotationStatus.CANCELLED,
+                        QuotationStatus.DRAFT
+                )
+        );
+
+        QUOTATION.put(
+                QuotationStatus.ACCEPTED,
+                EnumSet.noneOf(QuotationStatus.class)
+        );
+
+        QUOTATION.put(
+                QuotationStatus.REJECTED,
+                EnumSet.noneOf(QuotationStatus.class)
+        );
+
+        QUOTATION.put(
+                QuotationStatus.EXPIRED,
+                EnumSet.noneOf(QuotationStatus.class)
+        );
+
+        QUOTATION.put(
+                QuotationStatus.CANCELLED,
+                EnumSet.noneOf(QuotationStatus.class)
+        );
+
+        // ============================================================
+        // SALES ORDER STATUS TRANSITIONS
+        // ============================================================
+
+        ORDER.put(
+                OrderStatus.DRAFT,
+                EnumSet.of(
+                        OrderStatus.PENDING,
+                        OrderStatus.APPROVED,
+                        OrderStatus.CANCELLED
+                )
+        );
+
+        ORDER.put(
+                OrderStatus.PENDING,
+                EnumSet.of(
+                        OrderStatus.APPROVED,
+                        OrderStatus.DRAFT,
+                        OrderStatus.CANCELLED
+                )
+        );
+
+        ORDER.put(
+                OrderStatus.APPROVED,
+                EnumSet.of(
+                        OrderStatus.PROCESSING,
+                        OrderStatus.CANCELLED
+                )
+        );
+
+        ORDER.put(
+                OrderStatus.PROCESSING,
+                EnumSet.of(
+                        OrderStatus.COMPLETED,
+                        OrderStatus.CANCELLED
+                )
+        );
+
+        ORDER.put(
+                OrderStatus.COMPLETED,
+                EnumSet.noneOf(OrderStatus.class)
+        );
+
+        ORDER.put(
+                OrderStatus.CANCELLED,
+                EnumSet.noneOf(OrderStatus.class)
+        );
+
+        // ============================================================
+        // INVOICE STATUS TRANSITIONS
+        // ============================================================
+
+        INVOICE.put(
+                InvoiceStatus.DRAFT,
+                EnumSet.of(
+                        InvoiceStatus.PENDING,
+                        InvoiceStatus.SENT,
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.CANCELLED
+                )
+        );
+
+        INVOICE.put(
+                InvoiceStatus.PENDING,
+                EnumSet.of(
+                        InvoiceStatus.SENT,
+                        InvoiceStatus.APPROVED,
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.OVERDUE,
+                        InvoiceStatus.CANCELLED
+                )
+        );
+
+        INVOICE.put(
+                InvoiceStatus.SENT,
+                EnumSet.of(
+                        InvoiceStatus.APPROVED,
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.OVERDUE,
+                        InvoiceStatus.PENDING,
+                        InvoiceStatus.CANCELLED
+                )
+        );
+
+        INVOICE.put(
+                InvoiceStatus.APPROVED,
+                EnumSet.of(
+                        InvoiceStatus.CONFIRMED,
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.CANCELLED
+                )
+        );
+
+        INVOICE.put(
+                InvoiceStatus.CONFIRMED,
+                EnumSet.of(
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.CANCELLED
+                )
+        );
+
+        INVOICE.put(
+                InvoiceStatus.OVERDUE,
+                EnumSet.of(
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.CANCELLED
+                )
+        );
+
+        // Allow reopening after payment reversal.
+        INVOICE.put(
+                InvoiceStatus.PAID,
+                EnumSet.of(
+                        InvoiceStatus.PENDING
+                )
+        );
+
+        INVOICE.put(
+                InvoiceStatus.CANCELLED,
+                EnumSet.noneOf(InvoiceStatus.class)
+        );
+
+        // ============================================================
+        // CAMPAIGN STATUS TRANSITIONS
+        // ============================================================
+
+        CAMPAIGN.put(
+                CampaignStatus.PLANNED,
+                EnumSet.of(
+                        CampaignStatus.ACTIVE,
+                        CampaignStatus.CANCELLED
+                )
+        );
+
+        CAMPAIGN.put(
+                CampaignStatus.ACTIVE,
+                EnumSet.of(
+                        CampaignStatus.COMPLETED,
+                        CampaignStatus.CANCELLED
+                )
+        );
+
+        CAMPAIGN.put(
+                CampaignStatus.COMPLETED,
+                EnumSet.noneOf(CampaignStatus.class)
+        );
+
+        CAMPAIGN.put(
+                CampaignStatus.CANCELLED,
+                EnumSet.noneOf(CampaignStatus.class)
+        );
     }
+
+    // ================================================================
+    // PRIVATE CONSTRUCTOR
+    // ================================================================
 
     private DomainStatusGuard() {
+        // Utility class - prevent instantiation.
     }
 
-    public static void assertLeadTransition(LeadStatus from, LeadStatus to) {
-        assertTransition("Lead", from, to, LEAD.getOrDefault(from, Set.of()));
+    // ================================================================
+    // LEAD
+    // ================================================================
+
+    public static void assertLeadTransition(
+            LeadStatus from,
+            LeadStatus to
+    ) {
+
+        assertTransition(
+                "Lead",
+                from,
+                to,
+                LEAD.getOrDefault(from, Set.of())
+        );
     }
 
-    public static void assertOpportunityTransition(OpportunityStage from, OpportunityStage to) {
-        assertTransition("Opportunity", from, to, OPPORTUNITY.getOrDefault(from, Set.of()));
+    // ================================================================
+    // OPPORTUNITY
+    // ================================================================
+
+    public static void assertOpportunityTransition(
+            OpportunityStage from,
+            OpportunityStage to
+    ) {
+
+        assertTransition(
+                "Opportunity",
+                from,
+                to,
+                OPPORTUNITY.getOrDefault(from, Set.of())
+        );
     }
 
-    public static void assertQuotationTransition(QuotationStatus from, QuotationStatus to) {
-        assertTransition("Quotation", from, to, QUOTATION.getOrDefault(from, Set.of()));
+    // ================================================================
+    // QUOTATION
+    // ================================================================
+
+    public static void assertQuotationTransition(
+            QuotationStatus from,
+            QuotationStatus to
+    ) {
+
+        assertTransition(
+                "Quotation",
+                from,
+                to,
+                QUOTATION.getOrDefault(from, Set.of())
+        );
     }
 
-    public static void assertOrderTransition(OrderStatus from, OrderStatus to) {
-        assertTransition("Sales order", from, to, ORDER.getOrDefault(from, Set.of()));
+    // ================================================================
+    // SALES ORDER
+    // ================================================================
+
+    public static void assertOrderTransition(
+            OrderStatus from,
+            OrderStatus to
+    ) {
+
+        assertTransition(
+                "Sales order",
+                from,
+                to,
+                ORDER.getOrDefault(from, Set.of())
+        );
     }
 
-    public static void assertInvoiceTransition(InvoiceStatus from, InvoiceStatus to) {
-        assertTransition("Invoice", from, to, INVOICE.getOrDefault(from, Set.of()));
+    // ================================================================
+    // INVOICE
+    // ================================================================
+
+    public static void assertInvoiceTransition(
+            InvoiceStatus from,
+            InvoiceStatus to
+    ) {
+
+        assertTransition(
+                "Invoice",
+                from,
+                to,
+                INVOICE.getOrDefault(from, Set.of())
+        );
     }
 
-    public static void assertCampaignTransition(CampaignStatus from, CampaignStatus to) {
-        assertTransition("Campaign", from, to, CAMPAIGN.getOrDefault(from, Set.of()));
+    // ================================================================
+    // CAMPAIGN
+    // ================================================================
+
+    public static void assertCampaignTransition(
+            CampaignStatus from,
+            CampaignStatus to
+    ) {
+
+        assertTransition(
+                "Campaign",
+                from,
+                to,
+                CAMPAIGN.getOrDefault(from, Set.of())
+        );
     }
+
+    // ================================================================
+    // COMMON TRANSITION VALIDATION
+    // ================================================================
 
     private static <E extends Enum<E>> void assertTransition(
-            String label, E from, E to, Set<E> allowed) {
+            String label,
+            E from,
+            E to,
+            Set<E> allowed
+    ) {
+
+        // Same status is always allowed.
         if (from == to) {
             return;
         }
-        if (from == null || to == null || !allowed.contains(to)) {
+
+        // Null status is not allowed.
+        if (from == null || to == null) {
             throw new IllegalStateException(
-                    label + " cannot transition from " + from + " to " + to);
+                    label + " cannot transition from "
+                            + from
+                            + " to "
+                            + to
+            );
+        }
+
+        // Check whether requested status is allowed.
+        if (!allowed.contains(to)) {
+            throw new IllegalStateException(
+                    label + " cannot transition from "
+                            + from
+                            + " to "
+                            + to
+            );
         }
     }
 }

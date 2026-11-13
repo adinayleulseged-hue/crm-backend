@@ -68,6 +68,10 @@ public class SalesOrder {
     @Column(length = 2000)
     private String notes;
 
+    @Column(name = "invoice_generated")
+    @Builder.Default
+    private Boolean invoiceGenerated = false;
+
     @OneToMany(
             mappedBy = "salesOrder",
             cascade = CascadeType.ALL,
