@@ -1,4 +1,4 @@
-# CRM Backend (INSA)
+# CRM Backend - INSA (Information Network Security Administration)
 
 Spring Boot CRM microservice for the INSA ERP system. Auth follows the **ERP Keycloak standard**
 (OAuth2 resource server). An optional API Gateway and legacy auth-service remain in-repo.
@@ -7,11 +7,11 @@ Spring Boot CRM microservice for the INSA ERP system. Auth follows the **ERP Key
 
 ## 🎓 Developer Information
 
-**Developer:** Abem Tarekegn  
-**Institution:** INSA (Institute of Technology)  
+**Developer:** Adanech Leulseged  
+**Institution:** INSA (Information Network Security Administration)  
 **Project Status:** ✅ **COMPLETED**
 
-![Developer ID](../docs/developer-id.jpg)
+
 
 ---
 
